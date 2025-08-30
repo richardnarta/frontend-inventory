@@ -1,0 +1,275 @@
+import React, { useState, useRef, useEffect } from 'react';
+
+// --- MOCK DATA & TYPES --- //
+// In a real app, you'd fetch this data from an API.
+type Product = {
+  id: string;
+  code: string;
+  name: string;
+  stock: number;
+  stockUnit: 'Roll' | 'Pcs' | 'Box';
+  weight: number;
+  weightUnit: 'Kg' | 'Ton';
+  price: number;
+  totalValue: number;
+};
+
+const mockProducts: Product[] = [
+  { id: '1', code: 'A001', name: 'Benang PE 20', stock: 0, stockUnit: 'Roll', weight: 604.07, weightUnit: 'Kg', price: 23463, totalValue: 2091894 },
+  { id: '2', code: 'A002', name: 'Benang PE 30 A', stock: 0, stockUnit: 'Roll', weight: 232, weightUnit: 'Kg', price: 23423, totalValue: 5434136 },
+  { id: '3', code: 'A002', name: 'Benang PE 24', stock: 0, stockUnit: 'Roll', weight: 324, weightUnit: 'Kg', price: 23424, totalValue: 7589376 },
+  { id: '4', code: 'A002', name: 'Benang M71', stock: 0, stockUnit: 'Roll', weight: 514.07, weightUnit: 'Kg', price: 23432, totalValue: 12045688 },
+  { id: '5', code: 'A003', name: 'Benang PE 40', stock: 0, stockUnit: 'Roll', weight: 757, weightUnit: 'Kg', price: 234, totalValue: 177138 },
+  { id: '6', code: 'B001', name: 'Benang Polyste', stock: 0, stockUnit: 'Roll', weight: 375.45, weightUnit: 'Kg', price: 2342, totalValue: 879304 },
+  { id: '7', code: 'B007', name: 'Benang M81', stock: 0, stockUnit: 'Roll', weight: 464, weightUnit: 'Kg', price: 23423, totalValue: 10868272 },
+  { id: '8', code: 'B002', name: 'Kain Grey Skpe 120', stock: 7, stockUnit: 'Roll', weight: 171.50, weightUnit: 'Kg', price: 23432, totalValue: 4018588 },
+  { id: '9', code: 'D001', name: 'Kain Grey Dkpe 40 150', stock: 8, stockUnit: 'Roll', weight: 2346, weightUnit: 'Kg', price: 1234, totalValue: 2894964 },
+];
+
+
+// --- SVG ICONS --- //
+// Using inline SVGs for portability. In a real project, you might use a library like lucide-react.
+const MenuIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" />
+  </svg>
+);
+
+const SearchIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+);
+
+const ResetIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M21 21v-5h-5" />
+    </svg>
+);
+
+const PrintIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" />
+    </svg>
+);
+
+const PlusIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+);
+
+const EditIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+    </svg>
+);
+
+const DeleteIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+);
+
+const ChevronLeftIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="15 18 9 12 15 6" />
+    </svg>
+);
+
+const ChevronRightIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6" />
+    </svg>
+);
+
+// --- COMPONENTS --- //
+
+// This is the floating dashboard menu. It's flexible for an n x n grid.
+const FloatingDashboard = ({ isOpen, onClose }) => {
+    const dashboardRef = useRef<HTMLDivElement>(null);
+
+    // This configuration array makes the menu easily modifiable.
+    // Just add or remove items here to change the dashboard.
+    const menuItems = [
+        { name: 'Analytics', color: 'bg-blue-500' },
+        { name: 'Inventory', color: 'bg-green-500' },
+        { name: 'Sales', color: 'bg-yellow-500' },
+        { name: 'Customers', color: 'bg-purple-500' },
+        { name: 'Reports', color: 'bg-red-500' },
+        { name: 'Settings', color: 'bg-indigo-500' },
+        { name: 'Users', color: 'bg-pink-500' },
+        { name: 'Invoices', color: 'bg-teal-500' },
+        { name: 'Help', color: 'bg-gray-500' },
+    ];
+    
+    // Handle clicks outside the dashboard to close it
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dashboardRef.current && !dashboardRef.current.contains(event.target as Node)) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40 flex items-center justify-center transition-opacity duration-300">
+            <div ref={dashboardRef} className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 m-4 max-w-2xl w-full transform transition-all duration-300 scale-95 hover:scale-100">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">Main Menu</h2>
+                {/* The grid layout makes it n x n automatically */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {menuItems.map((item) => (
+                        <button 
+                            key={item.name} 
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl ${item.color} text-white font-semibold h-28 transform hover:-translate-y-1 transition-transform duration-200 shadow-lg hover:shadow-xl`}
+                            onClick={onClose}
+                        >
+                            <span>{item.name}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+export default function App() {
+    const [products, setProducts] = useState<Product[]>(mockProducts);
+    const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+    
+    // Helper to format currency
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(amount);
+    };
+
+    return (
+        <div className="bg-gray-100 dark:bg-gray-900 min-h-screen font-sans text-gray-800 dark:text-gray-200">
+            <FloatingDashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
+            
+            <div className="flex">
+                {/* --- SIDEBAR --- */}
+                <aside className="w-64 bg-white dark:bg-gray-800 p-6 shadow-md hidden lg:flex flex-col h-screen sticky top-0">
+                    <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-8">InventoryApp</h1>
+                    <nav className="flex flex-col space-y-2">
+                        <a href="#" className="py-2 px-4 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold">Menu benang</a>
+                        <a href="#" className="py-2 px-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Menu kain</a>
+                        <a href="#" className="py-2 px-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Menu piutang</a>
+                    </nav>
+                </aside>
+
+                {/* --- MAIN CONTENT --- */}
+                <main className="flex-1 p-4 sm:p-6 lg:p-8">
+                    {/* --- HEADER --- */}
+                    <header className="flex items-center justify-between mb-6">
+                         <button 
+                            onClick={() => setIsDashboardOpen(true)}
+                            className="lg:hidden p-2 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                            aria-label="Open menu"
+                        >
+                            <MenuIcon />
+                        </button>
+                        <h2 className="text-3xl font-bold hidden sm:block">Product List</h2>
+                        <div className="w-full max-w-xs ml-4">
+                            {/* This could be a user profile dropdown */}
+                            <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm text-right">
+                                Admin User
+                            </div>
+                        </div>
+                    </header>
+                    
+                    {/* --- CONTROLS / FILTERS --- */}
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                            {/* Search Inputs */}
+                            <div>
+                                <label htmlFor="kode-barang" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Kode barang</label>
+                                <input type="text" id="kode-barang" className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            </div>
+                             <div>
+                                <label htmlFor="nama-barang" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Nama barang</label>
+                                <input type="text" id="nama-barang" className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap gap-2 col-span-1 md:col-span-2 justify-start md:justify-end">
+                                <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow">
+                                    <SearchIcon /> Search
+                                </button>
+                                <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors shadow">
+                                    <ResetIcon /> Reset
+                                </button>
+                                <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors shadow">
+                                    <PrintIcon /> Print
+                                </button>
+                                <button className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow">
+                                    <PlusIcon /> Add Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* --- DATA TABLE --- */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 dark:bg-gray-700 text-xs uppercase text-gray-700 dark:text-gray-400">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">Kode Barang</th>
+                                    <th scope="col" className="px-6 py-3">Nama Barang</th>
+                                    <th scope="col" className="px-6 py-3 text-right">Jumlah Stock</th>
+                                    <th scope="col" className="px-6 py-3 text-right">Satuan (Kg)</th>
+                                    <th scope="col" className="px-6 py-3 text-right">Harga Barang</th>
+                                    <th scope="col" className="px-6 py-3 text-right">Nilai Total</th>
+                                    <th scope="col" className="px-6 py-3 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.map((product, index) => (
+                                    <tr key={product.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                        <td className="px-6 py-4 font-medium whitespace-nowrap">{product.code}</td>
+                                        <td className="px-6 py-4">{product.name}</td>
+                                        <td className="px-6 py-4 text-right">{product.stock} {product.stockUnit}</td>
+                                        <td className="px-6 py-4 text-right">{product.weight.toFixed(2)} {product.weightUnit}</td>
+                                        <td className="px-6 py-4 text-right">{formatCurrency(product.price)}</td>
+                                        <td className="px-6 py-4 text-right font-semibold">{formatCurrency(product.totalValue)}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button className="p-1 text-blue-500 hover:text-blue-700" aria-label="Edit"><EditIcon /></button>
+                                                <button className="p-1 text-red-500 hover:text-red-700" aria-label="Delete"><DeleteIcon /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* --- PAGINATION --- */}
+                    <div className="flex justify-center items-center mt-6 gap-4">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-md">
+                            <ChevronLeftIcon /> Prev Page
+                        </button>
+                        <span className="text-gray-600 dark:text-gray-400">Page 1 of 10</span>
+                        <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-md">
+                            Next Page <ChevronRightIcon />
+                        </button>
+                    </div>
+                </main>
+            </div>
+        </div>
+    );
+}
