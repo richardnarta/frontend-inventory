@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 // --- ICONS FROM LUCIDE-REACT --- //
 import {
-  Search, RotateCcw, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Menu, LayoutDashboard, Package, FileText, CreditCard, Save, Loader2, Scissors, X, Droplets, Tag
+  Search, RotateCcw, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Menu, LayoutDashboard, Package, FileText, CreditCard, Save, Loader2, Scissors, X, Droplets, Tag, Factory
 } from 'lucide-react';
 
 // --- SHADCN/UI COMPONENTS --- //
@@ -15,6 +15,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 // --- API CONFIGURATION --- //
@@ -22,6 +23,10 @@ const API_BASE_URL = 'https://all-pillows-learn-yearly.a276.dcdg.xyz';
 
 // --- HELPER FUNCTIONS & TYPES --- //
 const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+const getDayName = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(date);
+};
 type NavLink = { name: string; icon: React.ReactNode; };
 type DashboardSheetProps = { links: NavLink[]; activeLink: string; onNavigate: (name: string) => void; };
 
@@ -46,8 +51,9 @@ type Buyer = { id: number; name: string; phone_num: string | null; };
 type SalesTransaction = { id: number; transaction_date: string; buyer: Buyer | null; inventory: BenangProduct | null; roll_count: number; weight_kg: number; price_per_kg: number; total: number; };
 type AccountReceivable = { id: number; buyer: Buyer | null; period: string; age_0_30_days: number; age_31_60_days: number; age_61_90_days: number; age_over_90_days: number; total: number; };
 type CelupProcess = { id: number; supplier: string; fabricName: string; purchaseDate: string; initialWeight: number; status: 'Belum Celup' | 'Sudah Celup'; settingCost?: number; finishedWeight?: number; price?: number; };
-type KainInventoryItem = { id: string; name: string; stock_kg: number; }; // For Menu Jual
+type KainInventoryItem = { id: string; name: string; stock_kg: number; };
 type SoldFabric = { id: number; item: KainInventoryItem; quantitySoldKg: number; salePrice: number; saleDate: string; };
+type ProductionRecord = { id: number; date: string; production: string; lot: string; operator: string; brokenYarn: number; weightKg: number; notes: string; };
 
 
 // --- MOCK DATA --- //
@@ -62,13 +68,13 @@ let mockPiutangRecords: AccountReceivable[] = Array.from({ length: 12 }, (_, i) 
     return { id: i + 1, buyer: mockBuyers[i % mockBuyers.length], period: 'Apr-25', age_0_30_days, age_31_60_days, age_61_90_days, age_over_90_days, total };
 });
 let mockCelupProcesses: CelupProcess[] = Array.from({ length: 8 }, (_, i) => ({ id: i + 1, supplier: `Supplier ${String.fromCharCode(65 + i)}`, fabricName: 'Kain Mentah Grey', purchaseDate: `2025-09-0${i + 1}`, initialWeight: 100 + i * 10, status: i % 2 === 0 ? 'Belum Celup' : 'Sudah Celup', settingCost: 50000 + i * 1000, finishedWeight: i % 2 !== 0 ? 95 + i * 10 : undefined, price: i % 2 !== 0 ? (95 + i * 10) * 25000 : undefined }));
-let mockKainInventory: KainInventoryItem[] = [
-    { id: 'kain-01', name: 'Kain Baby Terri Super', stock_kg: 250 },
-    { id: 'kain-02', name: 'Kain DKPE Premium', stock_kg: 180 },
-    { id: 'kain-03', name: 'SK Kelambu Halus', stock_kg: 320 },
-];
+let mockKainInventory: KainInventoryItem[] = [ { id: 'kain-01', name: 'Kain Baby Terri Super', stock_kg: 250 }, { id: 'kain-02', name: 'Kain DKPE Premium', stock_kg: 180 }, { id: 'kain-03', name: 'SK Kelambu Halus', stock_kg: 320 }, ];
 let mockSoldFabrics: SoldFabric[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, item: mockKainInventory[i % mockKainInventory.length], quantitySoldKg: 20 + i * 5, salePrice: 1250000 + (i * 100000), saleDate: `2025-09-0${i + 1}` }));
-
+const mockProductionData: { [machineId: string]: ProductionRecord[] } = {
+    '1': Array.from({length: 5}, (_, i) => ({ id: 100 + i, date: `2025-09-1${i+1}`, production: 'Kain Super', lot: `L00${i+1}`, operator: 'Budi', brokenYarn: 2, weightKg: 150.5 + i*5, notes: 'Berjalan lancar' })),
+    '2': Array.from({length: 3}, (_, i) => ({ id: 200 + i, date: `2025-09-1${i+1}`, production: 'Kain Premium', lot: `P00${i+1}`, operator: 'Agus', brokenYarn: 1, weightKg: 120.0 + i*5, notes: '' })),
+    '3': [],
+};
 
 // --- API SERVICE FUNCTIONS --- //
 
@@ -85,21 +91,9 @@ const getBenangProducts = async (filters: { name?: string, id?: string }, page: 
     const data = await response.json();
     return { items: data.items, total_pages: data.total_pages };
 };
-const createBenangProduct = async (productData: Omit<BenangProduct, 'total'>) => {
-    const response = await fetch(`${API_BASE_URL}/v1/inventory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(productData) });
-    if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail || 'Failed to create product'); }
-    return response.json();
-};
-const updateBenangProduct = async (id: string, productData: Omit<BenangProduct, 'id' | 'total'>) => {
-    const response = await fetch(`${API_BASE_URL}/v1/inventory/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(productData) });
-    if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail || 'Failed to update product'); }
-    return response.json();
-};
-const deleteBenangProduct = async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/v1/inventory/${id}`, { method: 'DELETE' });
-    if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail || 'Failed to delete product'); }
-    return { message: 'Product deleted successfully' };
-};
+const createBenangProduct = async (productData: Omit<BenangProduct, 'total'>) => { const response = await fetch(`${API_BASE_URL}/v1/inventory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(productData) }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail || 'Failed to create product'); } return response.json(); };
+const updateBenangProduct = async (id: string, productData: Omit<BenangProduct, 'id' | 'total'>) => { const response = await fetch(`${API_BASE_URL}/v1/inventory/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(productData) }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail || 'Failed to update product'); } return response.json(); };
+const deleteBenangProduct = async (id: string) => { const response = await fetch(`${API_BASE_URL}/v1/inventory/${id}`, { method: 'DELETE' }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail || 'Failed to delete product'); } return { message: 'Product deleted successfully' }; };
 
 // Mock APIs for other pages
 const getKainTransactions = async (): Promise<SalesTransaction[]> => new Promise(res => setTimeout(() => res(mockKainTransactions), 500));
@@ -107,6 +101,7 @@ const getPiutangRecords = async (): Promise<AccountReceivable[]> => new Promise(
 const getCelupProcesses = async (): Promise<CelupProcess[]> => new Promise(res => setTimeout(() => res(mockCelupProcesses), 500));
 const getKainInventory = async (): Promise<KainInventoryItem[]> => new Promise(res => setTimeout(() => res(mockKainInventory), 500));
 const getSoldFabrics = async (): Promise<SoldFabric[]> => new Promise(res => setTimeout(() => res(mockSoldFabrics), 500));
+const getProductionData = async (): Promise<typeof mockProductionData> => new Promise(res => setTimeout(() => res(mockProductionData), 500));
 
 
 // --- NAVIGATION CONFIGURATION --- //
@@ -117,10 +112,10 @@ const navLinks: NavLink[] = [
     { name: 'Menu Rajut Kain', icon: <Scissors className="h-5 w-5" /> },
     { name: 'Menu Celup', icon: <Droplets className="h-5 w-5" /> },
     { name: 'Menu Jual', icon: <Tag className="h-5 w-5" /> },
+    { name: 'Data Pabrik', icon: <Factory className="h-5 w-5" /> },
 ];
 
-// --- REUSABLE COMPONENTS --- //
-
+// --- REUSABLE & PAGE COMPONENTS --- //
 const DashboardSheet = ({ links, activeLink, onNavigate }: DashboardSheetProps) => (
     <Sheet><SheetTrigger asChild><Button variant="outline" size="icon" className="lg:hidden"><Menu className="h-5 w-5" /><span className="sr-only">Open Menu</span></Button></SheetTrigger>
         <SheetContent side="left" className="w-72 sm:w-80"><SheetHeader><SheetTitle className="text-2xl font-bold text-blue-600 flex items-center gap-2"><LayoutDashboard />InventoryApp</SheetTitle></SheetHeader>
@@ -570,6 +565,166 @@ const JualPage = () => {
 };
 
 
+// --- DataPabrikFormDialog Implementation --- //
+const DataPabrikFormDialog = ({ record, onSave, closeDialog }: { record?: ProductionRecord, onSave: (data: any) => void, closeDialog: () => void }) => {
+    const [formData, setFormData] = useState({
+        date: record?.date || new Date().toISOString().split('T')[0],
+        production: record?.production || '',
+        lot: record?.lot || '',
+        operator: record?.operator || '',
+        brokenYarn: record?.brokenYarn || '',
+        weightKg: record?.weightKg || '',
+        notes: record?.notes || '',
+    });
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => { const { id, value } = e.target; setFormData(prev => ({ ...prev, [id]: value })); };
+
+    return (
+        <DialogContent className="sm:max-w-[600px]"><DialogHeader><DialogTitle>{record ? 'Edit Catatan Produksi' : 'Tambah Catatan Produksi'}</DialogTitle></DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="date" className="text-right">Tanggal</Label><Input id="date" type="date" value={formData.date} onChange={handleChange} className="col-span-3" /></div>
+                <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="production" className="text-right">Produksi</Label><Input id="production" value={formData.production} onChange={handleChange} className="col-span-3" /></div>
+                <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="lot" className="text-right">Lot</Label><Input id="lot" value={formData.lot} onChange={handleChange} className="col-span-3" /></div>
+                <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="operator" className="text-right">Operator</Label><Input id="operator" value={formData.operator} onChange={handleChange} className="col-span-3" /></div>
+                <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="brokenYarn" className="text-right">Benang Putus</Label><Input id="brokenYarn" type="number" value={formData.brokenYarn} onChange={handleChange} className="col-span-3" /></div>
+                <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="weightKg" className="text-right">KG</Label><Input id="weightKg" type="number" step="any" value={formData.weightKg} onChange={handleChange} className="col-span-3" /></div>
+                <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="notes" className="text-right">Keterangan</Label><Input id="notes" value={formData.notes} onChange={handleChange} className="col-span-3" /></div>
+            </div>
+            <DialogFooter><Button type="button" variant="secondary" onClick={closeDialog}>Batal</Button><Button onClick={() => { onSave({}); closeDialog(); }}><Save className="mr-2 h-4 w-4" /> Simpan</Button></DialogFooter>
+        </DialogContent>
+    );
+};
+
+// --- DataPabrikPage Implementation --- //
+const DataPabrikPage = () => {
+    const [productionData, setProductionData] = useState<{ [key: string]: ProductionRecord[] }>({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [activeMachine, setActiveMachine] = useState('1');
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingRecord, setEditingRecord] = useState<ProductionRecord | undefined>(undefined);
+    const [isAddMachineOpen, setIsAddMachineOpen] = useState(false);
+    const [newMachineName, setNewMachineName] = useState('');
+
+
+    useEffect(() => {
+        getProductionData().then(data => {
+            setProductionData(data);
+            if (Object.keys(data).length > 0) {
+              setActiveMachine(Object.keys(data)[0]);
+            }
+            setIsLoading(false);
+        });
+    }, []);
+    
+    const handleAddMachine = () => {
+        if (newMachineName.trim() && !productionData[newMachineName.trim()]) {
+            const newMachineKey = newMachineName.trim();
+            setProductionData(prevData => ({
+                ...prevData,
+                [newMachineKey]: []
+            }));
+            setActiveMachine(newMachineKey);
+            setNewMachineName('');
+            setIsAddMachineOpen(false);
+        }
+    };
+
+    const openAddDialog = () => { setEditingRecord(undefined); setIsFormOpen(true); };
+    const openEditDialog = (record: ProductionRecord) => { setEditingRecord(record); setIsFormOpen(true); };
+    const closeDialog = () => { setIsFormOpen(false); setEditingRecord(undefined); };
+    const handleSave = (data: any) => { console.log(`Saving for machine ${activeMachine}:`, data); };
+
+    if (isLoading) return <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+
+    const machineIds = Object.keys(productionData);
+    const currentMachineData = productionData[activeMachine] || [];
+
+    return (
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <div className="flex justify-between items-center mb-4">
+                 <div className="flex items-center gap-2">
+                     <Select value={activeMachine} onValueChange={setActiveMachine}>
+                        <SelectTrigger className="w-48"><SelectValue placeholder="Pilih Mesin..." /></SelectTrigger>
+                        <SelectContent>
+                            {machineIds.map(id => (
+                                <SelectItem key={id} value={id}>Machine No {id}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <AlertDialog open={isAddMachineOpen} onOpenChange={setIsAddMachineOpen}>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="outline" size="icon"><Plus className="h-4 w-4"/></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Tambah Mesin Baru</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Masukkan nomor atau nama unik untuk mesin baru.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="py-4">
+                               <Label htmlFor="new-machine-name">Nomor/Nama Mesin</Label>
+                               <Input 
+                                   id="new-machine-name" 
+                                   value={newMachineName}
+                                   onChange={(e) => setNewMachineName(e.target.value)}
+                                   placeholder="e.g., 4"
+                               />
+                            </div>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setNewMachineName('')}>Batal</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleAddMachine}>Tambah</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+                <Button onClick={openAddDialog}><Plus className="mr-2 h-4 w-4" /> Tambah Data</Button>
+            </div>
+            
+            <Card>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[50px]">No</TableHead>
+                                <TableHead>Hari & Tanggal</TableHead>
+                                <TableHead>Produksi</TableHead>
+                                <TableHead>Lot</TableHead>
+                                <TableHead>Operator</TableHead>
+                                <TableHead className="text-right">Benang Putus</TableHead>
+                                <TableHead className="text-right">KG</TableHead>
+                                <TableHead>Keterangan</TableHead>
+                                <TableHead className="text-center">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {currentMachineData.length > 0 ? currentMachineData.map((record, index) => (
+                                <TableRow key={record.id}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{getDayName(record.date)}, {record.date}</TableCell>
+                                    <TableCell>{record.production}</TableCell>
+                                    <TableCell>{record.lot}</TableCell>
+                                    <TableCell>{record.operator}</TableCell>
+                                    <TableCell className="text-right">{record.brokenYarn}</TableCell>
+                                    <TableCell className="text-right">{record.weightKg.toFixed(2)}</TableCell>
+                                    <TableCell>{record.notes}</TableCell>
+                                    <TableCell className="text-center">
+                                        <Button variant="outline" size="icon" onClick={() => openEditDialog(record)}><Pencil className="h-4 w-4" /></Button>
+                                    </TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow><TableCell colSpan={9} className="text-center h-24">Belum ada data produksi untuk mesin ini.</TableCell></TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+            {isFormOpen && <DataPabrikFormDialog record={editingRecord} onSave={handleSave} closeDialog={closeDialog} />}
+        </Dialog>
+    );
+};
+
+
+// --- App Component --- //
 export default function App() {
   const [activeNav, setActiveNav] = React.useState<string>(navLinks[0].name);
   const handleNavigation = (name: string) => setActiveNav(name);
@@ -581,6 +736,7 @@ export default function App() {
           case 'Menu Rajut Kain': return <RajutKainPage />;
           case 'Menu Celup': return <CelupPage />;
           case 'Menu Jual': return <JualPage />;
+          case 'Data Pabrik': return <DataPabrikPage />;
           case 'Menu benang': default: return <BenangPage />;
       }
   }
