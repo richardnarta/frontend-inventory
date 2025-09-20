@@ -1,3 +1,6 @@
+import React, { 
+    // useState, useEffect 
+} from "react";
 import { Toaster } from "@/components/ui/sonner"
 
 import { InventoryPage } from './pages/Inventory';
@@ -16,6 +19,8 @@ import {
   ShoppingCart,
   Spool,
   Layers,
+  HandCoins,
+  Package
 } from 'lucide-react';
 
 // --- SHADCN/UI COMPONENTS --- //
@@ -409,6 +414,7 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-do
 import { BuyerPage } from './pages/Buyer';
 import { SalesTransactionPage } from './pages/Sales';
 import { ProgressPage } from './pages/Progress';
+import { SupplierPage } from "./pages/Supplier";
 
 type NavGroup = { name: string; items: NavLinks[] }
 type NavLinks = { name: string; icon: React.ReactNode; path: string; };
@@ -440,8 +446,8 @@ const navGroup: NavGroup[] = [
         name: 'Manajemen Pabrik',
         items: [
             { name: 'Data Pabrik', icon: <Factory className="h-5 w-5" />, path: '/pabrik' },
-            { name: 'Data Pembeli', icon: <Factory className="h-5 w-5" />, path: '/pembeli' },
-            { name: 'Data Supplier', icon: <Factory className="h-5 w-5" />, path: '/supplier' }
+            { name: 'Data Pembeli', icon: <HandCoins className="h-5 w-5" />, path: '/pembeli' },
+            { name: 'Data Supplier', icon: <Package className="h-5 w-5" />, path: '/supplier' }
         ]
     }
 ]
@@ -510,7 +516,7 @@ function AppLayout() {
                     <Route path='/piutang' element={<AccountReceivablePage />} />
                     <Route path='/pabrik' element={<ProgressPage name='Data Pabrik'/>} />
                     <Route path='/pembeli' element={<BuyerPage />} />
-                    <Route path='/supplier' element={<ProgressPage name='Data Supplier'/>} />
+                    <Route path='/supplier' element={<SupplierPage />} />
                     <Route path="/" element={<Navigate to="/benang" />} />
                 </Routes>
             </main>

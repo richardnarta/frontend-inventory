@@ -102,8 +102,8 @@ export const CreateUpdateSalesTransactionFormDialog = ({
                         items={inventories}
                         value={formData.inventory_id}
                         onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))}
-                        placeholder='Pilih barang'
-                        searchPlaceholder='Cari barang...'
+                        placeholder='Pilih kain'
+                        searchPlaceholder='Cari kain...'
                         emptyMessage='Barang tidak ditemukan'
                         isLoading={isInventoriesLoading}
                         className="col-span-3"
