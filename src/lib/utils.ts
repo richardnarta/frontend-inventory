@@ -13,12 +13,13 @@ export const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID',
 }).format(amount);
 
 export const formatNumber = (
-  value: number,
+  value?: number | null,
   options?: {
     minimumFractionDigits?: number;
     maximumFractionDigits?: number;
   }
 ): string => {
+  if (value == null) return "0"
   return new Intl.NumberFormat('id-ID', {
     ...options,
   }).format(value);
