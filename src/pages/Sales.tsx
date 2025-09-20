@@ -25,7 +25,7 @@ import { getInventories } from '@/service/inventory';
 import { createSalesTransaction, deleteSalesTransactionById, getSalesTransactions, updateSalesTransaction } from '@/service/sales_transaction';
 import type { SalesTransactionCreatePayload, SalesTransactionData, SalesTransactionUpdatePayload } from '@/model/sales_transaction';
 import { mapToDropdownItems } from '@/lib/mapper';
-import { cn, formatCurrency, formatDateTime } from '@/lib/utils';
+import { cn, formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 
 
 export const SalesTransactionPage = () => {
@@ -133,7 +133,7 @@ export const SalesTransactionPage = () => {
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <PageHeading headingTitle={`Menu Penjualan`} actionButton={() => {}} />
             <div className="bg-white dark:bg-gray-950 border p-4 rounded-xl shadow-sm mb-6">
-                <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+                <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                     <div>
                         <Label htmlFor="buyerFilter" className="block mb-2">Nama Pembeli</Label>
                         <Dropdown 
@@ -212,23 +212,23 @@ export const SalesTransactionPage = () => {
                         <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
                             <Table>
                                 <TableHeader><TableRow className="bg-blue-200 hover:bg-blue-200">
-                                    <TableHead className="pl-6 py-4">Tgl. Transaksi</TableHead>
+                                    <TableHead className="pl-6 py-4">Tanggal Transaksi</TableHead>
                                     <TableHead>Nama Pembeli</TableHead>
                                     <TableHead>Nama Kain</TableHead>
                                     <TableHead className="text-right">Roll</TableHead>
                                     <TableHead className="text-right">Berat (Kg)</TableHead>
-                                    <TableHead className="text-right">Harga /Kg</TableHead>
+                                    <TableHead className="text-right">Harga per Kg</TableHead>
                                     <TableHead className="text-right">Total</TableHead>
                                     <TableHead className="text-center">Aksi</TableHead>
                                 </TableRow></TableHeader>
                                 <TableBody>
                                     {transactions.map((data) => (
                                         <TableRow key={data.id}>
-                                            <TableCell className='pl-6'>{formatDateTime(data.transaction_date)}</TableCell>
+                                            <TableCell className='pl-6'>{formatDate(data.transaction_date)}</TableCell>
                                             <TableCell>{data.buyer?.name || '-'}</TableCell>
                                             <TableCell>{data.inventory?.name || '-'}</TableCell>
-                                            <TableCell className="text-right">{data.roll_count}</TableCell>
-                                            <TableCell className="text-right">{data.weight_kg}</TableCell>
+                                            <TableCell className="text-right">{formatNumber(data.roll_count)}</TableCell>
+                                            <TableCell className="text-right">{formatNumber(data.weight_kg)}</TableCell>
                                             <TableCell className="text-right">{formatCurrency(data.price_per_kg)}</TableCell>
                                             <TableCell className="text-right font-semibold">{formatCurrency(data.total)}</TableCell>
                                             <TableCell className="text-center"><div className="flex items-center justify-center gap-2">
@@ -253,13 +253,13 @@ export const SalesTransactionPage = () => {
                                 <Card key={data.id}>
                                     <CardHeader><CardTitle className="flex justify-between items-center text-base">
                                         <span>{data.buyer?.name || 'N/A'}</span>
-                                        <span className="text-sm font-normal text-gray-500">{formatDateTime(data.transaction_date)}</span>
+                                        <span className="text-sm font-normal text-gray-500">{formatDate(data.transaction_date)}</span>
                                     </CardTitle></CardHeader>
                                     <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                         <div className="font-semibold col-span-2 pb-1 border-b">{data.inventory?.name || 'N/A'}</div>
                                         <div className="font-semibold text-gray-500">Roll</div><div className="text-right">{data.roll_count}</div>
                                         <div className="font-semibold text-gray-500">Berat (Kg)</div><div className="text-right">{data.weight_kg}</div>
-                                        <div className="font-semibold text-gray-500">Harga /Kg</div><div className="text-right">{formatCurrency(data.price_per_kg)}</div>
+                                        <div className="font-semibold text-gray-500">Harga per Kg</div><div className="text-right">{formatCurrency(data.price_per_kg)}</div>
                                         <div className="col-span-2 border-t mt-2 pt-2 grid grid-cols-2">
                                             <div className="font-bold">Total</div><div className="text-right font-bold">{formatCurrency(data.total)}</div>
                                         </div>

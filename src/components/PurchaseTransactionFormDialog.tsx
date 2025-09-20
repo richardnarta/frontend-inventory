@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { SalesTransactionData, SalesTransactionCreatePayload, SalesTransactionUpdatePayload } from '../model/sales_transaction';
+import type { PurchaseTransactionData, PurchaseTransactionCreatePayload, PurchaseTransactionUpdatePayload } from '../model/purchase_transaction';
 import { type DropdownItem, Dropdown } from './Dropdown';
 
 import { format } from 'date-fns';
@@ -15,29 +15,30 @@ import { Input } from '@/components/ui/input';
 import { Save, Loader2 } from 'lucide-react';
 import { parseIndonesianNumber, formatNumber } from '../lib/utils';
 
-type CreateUpdateSalesTransactionFormDialogProps = {
-    transaction?: SalesTransactionData;
-    onSave: (data: SalesTransactionCreatePayload | SalesTransactionUpdatePayload) => Promise<void> | void;
+
+type CreateUpdatePurchaseTransactionFormDialogProps = {
+    transaction?: PurchaseTransactionData;
+    onSave: (data: PurchaseTransactionCreatePayload | PurchaseTransactionUpdatePayload) => Promise<void> | void;
     closeDialog: () => void;
-    buyers: DropdownItem[];
+    suppliers: DropdownItem[];
     inventories: DropdownItem[];
-    isBuyersLoading: boolean;
+    isSuppliersLoading: boolean;
     isInventoriesLoading: boolean;
 };
 
-export const CreateUpdateSalesTransactionFormDialog = ({
+export const CreateUpdatePurchaseTransactionFormDialog = ({
     transaction,
     onSave,
     closeDialog,
-    buyers,
+    suppliers,
     inventories,
-    isBuyersLoading,
+    isSuppliersLoading,
     isInventoriesLoading,
-}: CreateUpdateSalesTransactionFormDialogProps) => {
+}: CreateUpdatePurchaseTransactionFormDialogProps) => {
 
     const initialFormState = useMemo(() => ({
         transaction_date: transaction ? new Date(transaction.transaction_date) : new Date(),
-        buyer_id: transaction?.buyer?.id ? String(transaction.buyer.id) : '',
+        supplier_id: transaction?.supplier?.id ? String(transaction.supplier.id) : '',
         inventory_id: transaction?.inventory?.id || '',
         roll_count: transaction?.roll_count ? formatNumber(transaction.roll_count) : '0',
         weight_kg: transaction?.weight_kg ? formatNumber(transaction.weight_kg) : '0',
@@ -50,11 +51,9 @@ export const CreateUpdateSalesTransactionFormDialog = ({
     const isUnchanged = useMemo(() => {
         const initialDate = format(initialFormState.transaction_date, 'yyyy-MM-dd');
         const currentDate = format(formData.transaction_date, 'yyyy-MM-dd');
-        const isDateSame = initialDate === currentDate;
-
         return (
-            isDateSame &&
-            formData.buyer_id === initialFormState.buyer_id &&
+            initialDate === currentDate &&
+            formData.supplier_id === initialFormState.supplier_id &&
             formData.inventory_id === initialFormState.inventory_id &&
             formData.roll_count === initialFormState.roll_count &&
             formData.weight_kg === initialFormState.weight_kg &&
@@ -81,7 +80,7 @@ export const CreateUpdateSalesTransactionFormDialog = ({
     const handleSubmit = async () => {
         setIsSaving(true);
         const dataToSave = {
-            buyer_id: parseInt(formData.buyer_id, 10),
+            supplier_id: parseInt(formData.supplier_id, 10),
             inventory_id: formData.inventory_id,
             transaction_date: format(formData.transaction_date, "yyyy-MM-dd"),
             roll_count: parseIndonesianNumber(formData.roll_count) || 0,
@@ -97,7 +96,7 @@ export const CreateUpdateSalesTransactionFormDialog = ({
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>
-                    {transaction ? 'Edit Transaksi Penjualan' : 'Tambah Transaksi Penjualan Baru'}
+                    {transaction ? 'Edit Transaksi Pembelian' : 'Tambah Transaksi Pembelian Baru'}
                 </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -105,50 +104,23 @@ export const CreateUpdateSalesTransactionFormDialog = ({
                     <Label htmlFor="transaction_date" className="text-right">Tgl. Transaksi</Label>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn("col-span-3 justify-start text-left font-normal", !formData.transaction_date && "text-muted-foreground")}
-                            >
+                            <Button variant={"outline"} className={cn("col-span-3 justify-start text-left font-normal", !formData.transaction_date && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {formData.transaction_date ? format(formData.transaction_date, "dd-MM-yyyy") : <span>Pilih tanggal</span>}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={formData.transaction_date}
-                                onSelect={(date) => setFormData(prev => ({ ...prev, transaction_date: date || new Date() }))}
-                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                            />
+                            <Calendar mode="single" selected={formData.transaction_date} onSelect={(date) => setFormData(prev => ({ ...prev, transaction_date: date || new Date() }))} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} />
                         </PopoverContent>
                     </Popover>
                 </div>
-
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="buyer_id" className="text-right">Nama Pembeli</Label>
-                    <Dropdown
-                        items={buyers}
-                        value={formData.buyer_id}
-                        onChange={(value) => setFormData(prev => ({ ...prev, buyer_id: value }))}
-                        placeholder='Pilih pembeli'
-                        searchPlaceholder='Cari pembeli...'
-                        emptyMessage='Pembeli tidak ditemukan'
-                        isLoading={isBuyersLoading}
-                        className="col-span-3"
-                    />
+                    <Label htmlFor="supplier_id" className="text-right">Nama Supplier</Label>
+                    <Dropdown items={suppliers} value={formData.supplier_id} onChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))} placeholder='Pilih supplier' isLoading={isSuppliersLoading} className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="inventory_id" className="text-right">Nama Kain</Label>
-                     <Dropdown
-                        items={inventories}
-                        value={formData.inventory_id}
-                        onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))}
-                        placeholder='Pilih kain'
-                        searchPlaceholder='Cari kain...'
-                        emptyMessage='Kain tidak ditemukan'
-                        isLoading={isInventoriesLoading}
-                        className="col-span-3"
-                    />
+                    <Dropdown items={inventories} value={formData.inventory_id} onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))} placeholder='Pilih kain' isLoading={isInventoriesLoading} className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="roll_count" className="text-right">Jumlah Roll</Label>
@@ -165,7 +137,7 @@ export const CreateUpdateSalesTransactionFormDialog = ({
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeDialog}>Kembali</Button>
-                <Button onClick={handleSubmit} disabled={isSaving || isUnchanged || !formData.buyer_id || !formData.inventory_id || !formData.price_per_kg || !formData.transaction_date}>
+                <Button onClick={handleSubmit} disabled={isSaving || isUnchanged || !formData.supplier_id || !formData.inventory_id || !formData.transaction_date}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Simpan
                 </Button>

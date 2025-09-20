@@ -74,6 +74,11 @@ import { AccountReceivablePage } from './pages/AccountReceivable';
 // // --- MOCK DATA --- //
 // let mockCelupProcesses: CelupProcess[] = Array.from({ length: 8 }, (_, i) => ({ id: i + 1, supplier: `Supplier ${String.fromCharCode(65 + i)}`, fabricName: 'Kain Mentah Grey', purchaseDate: `2025-09-0${i + 1}`, initialWeight: 100 + i * 10, status: i % 2 === 0 ? 'Belum Celup' : 'Sudah Celup', settingCost: 50000 + i * 1000, finishedWeight: i % 2 !== 0 ? 95 + i * 10 : undefined, price: i % 2 !== 0 ? (95 + i * 10) * 25000 : undefined }));
 // let mockKainInventory: KainInventoryItem[] = [ { id: 'kain-01', name: 'Kain Baby Terri Super', stock_kg: 250 }, { id: 'kain-02', name: 'Kain DKPE Premium', stock_kg: 180 }, { id: 'kain-03', name: 'SK Kelambu Halus', stock_kg: 320 }, ];
+// const mockProductionData: { [machineId: string]: ProductionRecord[] } = {
+//     '1': Array.from({length: 5}, (_, i) => ({ id: 100 + i, date: `2025-09-1${i+1}`, production: 'Kain Super', lot: `L00${i+1}`, operator: 'Budi', brokenYarn: 2, weightKg: 150.5 + i*5, notes: 'Berjalan lancar' })),
+//     '2': Array.from({length: 3}, (_, i) => ({ id: 200 + i, date: `2025-09-1${i+1}`, production: 'Kain Premium', lot: `P00${i+1}`, operator: 'Agus', brokenYarn: 1, weightKg: 120.0 + i*5, notes: '' })),
+//     '3': [],
+// };
 
 // // Mock APIs for other pages
 // const getCelupProcesses = async (): Promise<CelupProcess[]> => new Promise(res => setTimeout(() => res(mockCelupProcesses), 500));
@@ -415,6 +420,8 @@ import { BuyerPage } from './pages/Buyer';
 import { SalesTransactionPage } from './pages/Sales';
 import { ProgressPage } from './pages/Progress';
 import { SupplierPage } from "./pages/Supplier";
+import { PurchaseTransactionPage } from "./pages/Purchase";
+import { DyeingPage } from "./pages/Dyeing";
 
 type NavGroup = { name: string; items: NavLinks[] }
 type NavLinks = { name: string; icon: React.ReactNode; path: string; };
@@ -509,12 +516,12 @@ function AppLayout() {
                 <Routes>
                     <Route path='/benang' element={<InventoryPage key="thread-page" type='thread' typeMessage='benang' />} />
                     <Route path='/kain' element={<InventoryPage key="fabric-page" type='fabric' typeMessage='kain' />} />
-                    <Route path='/rajut' element={<ProgressPage name='Menu Rajut'/>} />
-                    <Route path='/celup' element={<ProgressPage name='Menu Celup'/>} />
-                    <Route path='/pembelian' element={<ProgressPage name='Menu Pembelian'/>} />
+                    <Route path='/rajut' element={<ProgressPage name="Menu Rajut" />} />
+                    <Route path='/celup' element={<DyeingPage />} />
+                    <Route path='/pembelian' element={<PurchaseTransactionPage/>} />
                     <Route path='/penjualan' element={<SalesTransactionPage />} />
                     <Route path='/piutang' element={<AccountReceivablePage />} />
-                    <Route path='/pabrik' element={<ProgressPage name='Data Pabrik'/>} />
+                    <Route path='/pabrik' element={<ProgressPage name="Data Pabrik" />} />
                     <Route path='/pembeli' element={<BuyerPage />} />
                     <Route path='/supplier' element={<SupplierPage />} />
                     <Route path="/" element={<Navigate to="/benang" />} />

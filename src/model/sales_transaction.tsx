@@ -24,6 +24,7 @@ export interface SingleSalesTransactionResponse extends BaseSingleResponse {
 export type SalesTransactionCreatePayload = {
   buyer_id: number;
   inventory_id: string;
+  transaction_date: string;
   price_per_kg: number;
   roll_count?: number;
   weight_kg?: number;
