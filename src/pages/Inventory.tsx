@@ -20,8 +20,7 @@ import {
   Plus, 
   Pencil, 
   Trash2,
-  Loader2,
-  ExternalLink
+  Loader2
 } from 'lucide-react';
 
 import { formatCurrency, formatNumber, capitalize } from '../lib/utils';
@@ -127,11 +126,9 @@ export const InventoryPage = ({ type, typeMessage }: InventoryPageProps) => {
         setIsFormOpen(false);
     };
 
-    const exportData = () => {toast.success("WWWW")}
-
     return (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <PageHeading headingTitle={`Menu ${capitalize(typeMessage)}`} actionButtonTitle='Export Data Benang' actionButtonIcon={<ExternalLink/>} actionButton={exportData}/>
+            <PageHeading headingTitle={`Menu ${capitalize(typeMessage)}`} actionButton={() => {}}/>
 
             <div className="bg-white dark:bg-gray-950 border p-4 rounded-xl shadow-sm mb-6">
                 <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
