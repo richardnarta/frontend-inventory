@@ -96,7 +96,7 @@ export const CreateUpdateKnitProcessFormDialog = ({
             <DialogHeader><DialogTitle>{process ? 'Edit Proses Rajut' : 'Catat Proses Rajut Baru'}</DialogTitle></DialogHeader>
             <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-6">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">Tanggal Rajut</Label>
+                    <Label htmlFor="date" className="text-left col-span-1">Tanggal Rajut</Label>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant={"outline"} className={cn("col-span-3 justify-start text-left font-normal", !date && "text-muted-foreground")}>
@@ -122,8 +122,8 @@ export const CreateUpdateKnitProcessFormDialog = ({
                 )}
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="weight_kg" className="col-span-2 text-right">Jumlah Produksi (Kg)</Label>
-                    <Input id="weight_kg" value={actualWeight} onChange={e => setActualWeight(e.target.value)} className="col-span-2" placeholder="e.g., 100" />
+                    <Label htmlFor="weight_kg" className="col-span-1 text-left">Jumlah Produksi (Kg)</Label>
+                    <Input id="weight_kg" value={actualWeight} onChange={e => setActualWeight(e.target.value)} className="col-span-3" placeholder="e.g., 100" />
                 </div>
 
                 {finalMaterials.length > 0 && (
