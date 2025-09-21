@@ -150,7 +150,7 @@ export const SupplierPage = () => {
                                             <TableCell className='font-medium pl-6'>{`SUPPLIER-${data.id}`}</TableCell>
                                             <TableCell className="font-medium">{data.name}</TableCell>
                                             <TableCell>{data.phone_num || '-'}</TableCell>
-                                            <TableCell className="text-center">
+                                            <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
                                                         <Pencil className="h-4 w-4" />

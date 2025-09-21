@@ -200,7 +200,7 @@ export const PurchaseTransactionPage = () => {
                                         <TableCell className="text-right">{formatNumber(data.weight_kg)}</TableCell>
                                         <TableCell className="text-right">{formatCurrency(data.price_per_kg)}</TableCell>
                                         <TableCell className="text-right font-semibold">{formatCurrency(data.total)}</TableCell>
-                                        <TableCell className="text-center"><div className="flex items-center justify-center gap-2">
+                                        <TableCell className="text-center py-4"><div className="flex items-center justify-center gap-2">
                                             <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}><Pencil className="h-4 w-4" /></Button>
                                             <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus transaksi ini?`}><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button></DeleteConfirmationDialog>
                                         </div></TableCell>

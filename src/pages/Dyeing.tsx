@@ -184,7 +184,7 @@ export const DyeingPage = () => {
                                         <TableCell className="text-right">{formatNumber(data.weight_kg)}</TableCell>
                                         <TableCell className="text-right">{data.dye_final_weight ? formatNumber(data.dye_final_weight) : '-'}</TableCell>
                                         <TableCell className="text-right">{data.dye_overhead_cost ? formatCurrency(data.dye_overhead_cost) : '-'}</TableCell>
-                                        <TableCell className="text-center">
+                                        <TableCell className="text-center py-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}><Pencil className="h-4 w-4" /></Button>
                                                 <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus transaksi celup ini?`}>

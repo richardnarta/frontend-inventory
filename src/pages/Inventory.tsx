@@ -193,7 +193,7 @@ export const InventoryPage = ({ type, typeMessage }: InventoryPageProps) => {
                                             <TableCell className="text-right">{formatNumber(p.bale_count)}</TableCell>
                                             <TableCell className="text-right">{formatCurrency(p.price_per_kg)}</TableCell>
                                             <TableCell className="text-right font-semibold">{formatCurrency(p.total)}</TableCell>
-                                            <TableCell className="text-center">
+                                            <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Button variant="outline" size="icon" onClick={() => openEditDialog(p)}>
                                                         <Pencil className="h-4 w-4" />

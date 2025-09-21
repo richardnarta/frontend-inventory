@@ -155,7 +155,7 @@ export const FactoryPage = () => {
                                         <TableRow key={data.id}>
                                             <TableCell className='pl-6'>{`Mesin-${data.id}`}</TableCell>
                                             <TableCell className="font-medium">{data.name}</TableCell>
-                                            <TableCell className="text-center">
+                                            <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Button variant="outline" size="icon" onClick={() => handleView(data)}>
                                                         <Eye className="h-4 w-4" />

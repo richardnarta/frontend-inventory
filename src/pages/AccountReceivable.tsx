@@ -231,7 +231,7 @@ export const AccountReceivablePage = () => {
                                             <TableCell className="text-right font-semibold">
                                                 {formatCurrency(data.total)}
                                             </TableCell>
-                                            <TableCell className="text-center">
+                                            <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
                                                         <Pencil className="h-4 w-4" />
