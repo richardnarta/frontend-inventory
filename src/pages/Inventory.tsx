@@ -23,7 +23,7 @@ import {
   Loader2
 } from 'lucide-react';
 
-import { formatCurrency, formatNumber, capitalize } from '../lib/utils';
+import { formatNumber, capitalize } from '../lib/utils';
 
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { PageHeading } from '@/components/PageHeading';
@@ -172,11 +172,10 @@ export const InventoryPage = ({ type, typeMessage }: InventoryPageProps) => {
                                     <TableRow className="bg-blue-200 hover:bg-blue-200">
                                         <TableHead className="pl-6 py-4">Kode Barang</TableHead>
                                         <TableHead>Nama Barang</TableHead>
-                                        <TableHead className="text-right">Jumlah Roll</TableHead>
+                                        {(type === 'fabric') ? (
+                                            <TableHead className="text-right">Jumlah Roll</TableHead>
+                                        ):<TableHead className="text-right">Jumlah Bale</TableHead>}
                                         <TableHead className="text-right">Berat (Kg)</TableHead>
-                                        <TableHead className="text-right">Jumlah Bale</TableHead>
-                                        <TableHead className="text-right">Harga per Kg</TableHead>
-                                        <TableHead className="text-right">Nilai Total</TableHead>
                                         <TableHead className="text-center">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -185,11 +184,10 @@ export const InventoryPage = ({ type, typeMessage }: InventoryPageProps) => {
                                         <TableRow key={p.id}>
                                             <TableCell className="font-medium pl-6">{p.id}</TableCell>
                                             <TableCell>{p.name}</TableCell>
-                                            <TableCell className="text-right">{formatNumber(p.roll_count)}</TableCell>
+                                            {(type === 'fabric') ? (
+                                                <TableCell className="text-right">{formatNumber(p.roll_count)}</TableCell>
+                                            ):<TableCell className="text-right">{formatNumber(p.bale_count)}</TableCell>}        
                                             <TableCell className="text-right">{formatNumber(p.weight_kg)}</TableCell>
-                                            <TableCell className="text-right">{formatNumber(p.bale_count)}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(p.price_per_kg)}</TableCell>
-                                            <TableCell className="text-right font-semibold">{formatCurrency(p.total)}</TableCell>
                                             <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Button variant="outline" size="icon" onClick={() => openEditDialog(p)}>
@@ -220,16 +218,19 @@ export const InventoryPage = ({ type, typeMessage }: InventoryPageProps) => {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                        <div className="font-semibold text-gray-500">Jumlah Roll</div>
-                                        <div className="text-right">{formatNumber(p.roll_count)}</div>
+                                        {type === 'fabric' ? (
+                                            <>
+                                                <div className="font-semibold text-gray-500">Jumlah Roll</div>
+                                                <div className="text-right">{formatNumber(p.roll_count)}</div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="font-semibold text-gray-500">Jumlah Bale</div>
+                                                <div className="text-right">{formatNumber(p.bale_count)}</div>
+                                            </>
+                                        )}
                                         <div className="font-semibold text-gray-500">Berat (Kg)</div>
                                         <div className="text-right">{formatNumber(p.weight_kg)}</div>
-                                        <div className="font-semibold text-gray-500">Jumlah Bale</div>
-                                        <div className="text-right">{formatNumber(p.bale_count)}</div>
-                                        <div className="font-semibold text-gray-500">Harga per Kg</div>
-                                        <div className="text-right">{formatCurrency(p.price_per_kg)}</div>
-                                        <div className="font-semibold text-gray-500">Nilai Total</div>
-                                        <div className="text-right font-bold">{formatCurrency(p.total)}</div>
                                     </CardContent>
                                     <CardFooter className="flex justify-end gap-2">
                                         <Button variant="outline" size="icon" onClick={() => openEditDialog(p)}>

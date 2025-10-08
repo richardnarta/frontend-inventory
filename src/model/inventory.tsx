@@ -8,8 +8,6 @@ export interface InventoryData {
   roll_count: number;
   weight_kg: number;
   bale_count: number;
-  price_per_kg: number;
-  total: number;
 }
 
 export interface InventoryListResponse extends BaseListResponse {

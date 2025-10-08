@@ -34,8 +34,6 @@ export const CreateUpdateInventoryFormDialog = ({
         roll_count: product?.roll_count ? formatNumber(product.roll_count) : 0,
         weight_kg: product?.weight_kg ? formatNumber(product.weight_kg) : 0,
         bale_count: product?.bale_count ? formatNumber(product.bale_count) : 0,
-        price_per_kg: product?.price_per_kg ? formatNumber(product.price_per_kg) : 0,
-        total: product?.total ? formatNumber(product.total) : 0,
     }), [product]);
 
     const [formData, setFormData] = useState(initialFormState);
@@ -86,7 +84,6 @@ export const CreateUpdateInventoryFormDialog = ({
             roll_count: parseIndonesianNumber(formData.roll_count) || 0,
             weight_kg: parseIndonesianNumber(formData.weight_kg) || 0,
             bale_count: parseIndonesianNumber(formData.bale_count) || 0,
-            price_per_kg: parseIndonesianNumber(formData.price_per_kg) || 0,
         };
 
         await onSave(dataToSave);
@@ -114,21 +111,18 @@ export const CreateUpdateInventoryFormDialog = ({
                     <Label htmlFor="name" className="text-right">Nama barang</Label>
                     <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" spellCheck="false"/>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="roll_count" className="text-right">Jumlah Roll</Label>
-                    <Input id="roll_count" type="numeric" value={formData.roll_count} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 10" spellCheck="false"/>
-                </div>
+                {(typeMessage === 'kain') ? (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="roll_count" className="text-right">Jumlah Roll</Label>
+                        <Input id="roll_count" type="numeric" value={formData.roll_count} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 10" spellCheck="false"/>
+                    </div>
+                ):<div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="bale_count" className="text-right">Jumlah Bale</Label>
+                    <Input id="bale_count" type="numeric" value={formData.bale_count} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 5" spellCheck="false"/>
+                </div>}
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="weight_kg" className="text-right">Berat (Kg)</Label>
                     <Input id="weight_kg" type="numeric" step="any" value={formData.weight_kg} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 22,5" spellCheck="false"/>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="bale_count" className="text-right">Jumlah Bale</Label>
-                    <Input id="bale_count" type="numeric" value={formData.bale_count} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 5" spellCheck="false"/>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="price_per_kg" className="text-right">Harga per Kg</Label>
-                    <Input id="price_per_kg" type="numeric" step="any" value={formData.price_per_kg} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 15.000,75" spellCheck="false"/>
                 </div>
             </div>
             <DialogFooter>
