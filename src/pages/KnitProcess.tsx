@@ -203,6 +203,7 @@ export const KnitProcessPage = () => {
                                 <TableHead>Mesin</TableHead>
                                 <TableHead className="text-center">Status</TableHead>
                                 <TableHead className="text-right">Berat (Kg)</TableHead>
+                                <TableHead className="text-right">Jumlah Rol</TableHead>
                                 <TableHead className="text-center">Aksi</TableHead>
                             </TableRow></TableHeader>
                             <TableBody>
@@ -230,6 +231,7 @@ export const KnitProcessPage = () => {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right font-semibold">{formatNumber(data.weight_kg)}</TableCell>
+                                        <TableCell className="text-right font-semibold">{formatNumber(data.roll_count)}</TableCell>
                                         <TableCell className="text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 {!data.knit_status && (

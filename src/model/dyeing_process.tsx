@@ -6,6 +6,7 @@ export interface DyeingProcessData {
   start_date: string; // ISO datetime
   end_date: string | null; // ISO datetime
   dyeing_weight: number;
+  dyeing_roll_count: number | null;
   dyeing_final_weight: number | null;
   dyeing_overhead_cost: number | null;
   dyeing_status: boolean;
@@ -25,6 +26,7 @@ export type DyeingProcessCreatePayload = {
   product_id: string;
   dyeing_weight: number;
   dyeing_note?: string | null;
+  dyeing_roll_count: number;
 };
 
 export type DyeingProcessUpdatePayload = {
@@ -33,4 +35,5 @@ export type DyeingProcessUpdatePayload = {
   dyeing_overhead_cost?: number | null;
   dyeing_status?: boolean | null;
   dyeing_note?: string | null;
+  dyeing_roll_count?: number | null;
 };

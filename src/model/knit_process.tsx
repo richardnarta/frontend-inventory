@@ -9,6 +9,7 @@ export interface KnittingProcessData {
   end_date: string | null; // ISO datetime
   knit_status: boolean;
   weight_kg: number;
+  roll_count: number | null;
   materials: {
     inventory_id: string;
     inventory_name: string;
@@ -39,4 +40,5 @@ export type KnittingProcessUpdatePayload = {
   knit_status?: boolean | null;
   operator_id?: number | null;
   machine_id?: number | null;
+  roll_count: number;
 };

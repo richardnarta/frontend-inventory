@@ -24,6 +24,7 @@ export interface SinglePurchaseTransactionResponse extends BaseSingleResponse {
 }
 
 export type PurchaseTransactionCreatePayload = {
+  transaction_date: string;
   supplier_id: number;
   inventory_id: string;
   bale_count?: number;

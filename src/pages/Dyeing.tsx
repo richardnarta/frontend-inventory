@@ -183,6 +183,7 @@ export const DyeingProcessPage = () => {
                                 <TableHead className="max-w-xs">Catatan</TableHead>
                                 <TableHead className="text-right">Berat Awal (Kg)</TableHead>
                                 <TableHead className="text-right">Berat Akhir (Kg)</TableHead>
+                                <TableHead className="text-right">Jumlah Rol</TableHead>
                                 <TableHead className="text-right">Biaya Overhead</TableHead>
                                 <TableHead className="text-center">Aksi</TableHead>
                             </TableRow></TableHeader>
@@ -206,6 +207,7 @@ export const DyeingProcessPage = () => {
                                         </TableCell>
                                         <TableCell className="text-right font-semibold">{formatNumber(data.dyeing_weight)}</TableCell>
                                         <TableCell className="text-right">{data.dyeing_final_weight ? formatNumber(data.dyeing_final_weight) : '-'}</TableCell>
+                                        <TableCell className="text-right">{data.dyeing_roll_count ? formatNumber(data.dyeing_roll_count) : '-'}</TableCell>
                                         <TableCell className="text-right">{data.dyeing_overhead_cost ? formatCurrency(data.dyeing_overhead_cost) : '-'}</TableCell>
                                         <TableCell className="text-center">
                                             <div className="flex items-center justify-center gap-2">

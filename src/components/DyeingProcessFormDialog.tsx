@@ -35,9 +35,10 @@ export const CreateUpdateDyeingProcessFormDialog = ({
     
     const [selectedProductId, setSelectedProductId] = useState('');
     const [dyeingWeight, setDyeingWeight] = useState('0');
+    const [dyeingRoll, setDyeingRoll] = useState('0');
     const [dyeingStatus, setDyeingStatus] = useState('false');
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-    const [endTime, setEndTime] = useState({ hours: '00', minutes: '00' });
+    const [endTime, setEndTime] = useState({ hours: '', minutes: '' });
     const [finalWeight, setFinalWeight] = useState('0');
     const [overheadCost, setOverheadCost] = useState('0');
     const [note, setNote] = useState('');
@@ -53,6 +54,7 @@ export const CreateUpdateDyeingProcessFormDialog = ({
         if (process) {
             setSelectedProductId(process.product.id);
             setDyeingWeight(formatNumber(process.dyeing_weight));
+            setDyeingRoll(formatNumber(process.dyeing_roll_count))
             setDyeingStatus(String(process.dyeing_status));
             setNote(process.dyeing_note || '');
             
@@ -65,17 +67,18 @@ export const CreateUpdateDyeingProcessFormDialog = ({
                 });
             } else {
                 setEndDate(undefined);
-                setEndTime({ hours: '00', minutes: '00' });
+                setEndTime({ hours: '', minutes: '' });
             }
             
             setFinalWeight(process.dyeing_final_weight ? formatNumber(process.dyeing_final_weight) : '0');
             setOverheadCost(process.dyeing_overhead_cost ? formatNumber(process.dyeing_overhead_cost) : '0');
         } else {
             setSelectedProductId('');
+            setDyeingRoll('0')
             setDyeingWeight('0');
             setDyeingStatus('false');
             setEndDate(undefined);
-            setEndTime({ hours: '00', minutes: '00' });
+            setEndTime({ hours: '', minutes: '' });
             setFinalWeight('0');
             setOverheadCost('0');
             setNote('');
@@ -109,6 +112,7 @@ export const CreateUpdateDyeingProcessFormDialog = ({
                 dyeing_final_weight: isStatusTrue ? (parseIndonesianNumber(finalWeight) || 0) : undefined,
                 dyeing_overhead_cost: isStatusTrue ? (parseIndonesianNumber(overheadCost) || 0) : undefined,
                 dyeing_note: note || undefined,
+                dyeing_roll_count: parseIndonesianNumber(dyeingRoll) || undefined,
             };
             await onSave(dataToSave);
         } else {
@@ -117,6 +121,7 @@ export const CreateUpdateDyeingProcessFormDialog = ({
                 product_id: selectedProductId,
                 dyeing_weight: parseIndonesianNumber(dyeingWeight) || 0,
                 dyeing_note: note || undefined,
+                dyeing_roll_count: parseIndonesianNumber(dyeingRoll) || 0
             };
             await onSave(dataToSave);
         }
@@ -179,6 +184,19 @@ export const CreateUpdateDyeingProcessFormDialog = ({
                         </div>
 
                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="dyeing_roll" className="col-span-1 text-right">Jumlah Roll</Label>
+                            <Input 
+                                id="dyeing_roll" 
+                                type="text"
+                                inputMode="decimal"
+                                value={dyeingRoll} 
+                                onChange={(e) => handleNumberChange(e, setDyeingRoll)} 
+                                className="col-span-3" 
+                                placeholder="e.g., 100" 
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="note" className="text-right">Catatan</Label>
                             <Textarea
                                 id="note"
@@ -204,6 +222,10 @@ export const CreateUpdateDyeingProcessFormDialog = ({
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Berat Awal:</span>
                                     <span className="font-medium">{formatNumber(process.dyeing_weight)} Kg</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Jumlah Rol:</span>
+                                    <span className="font-medium">{formatNumber(process.dyeing_roll_count)}</span>
                                 </div>
                                 {process.dyeing_note && (
                                     <div className="pt-2 border-t">
@@ -315,6 +337,19 @@ export const CreateUpdateDyeingProcessFormDialog = ({
                                         inputMode="decimal"
                                         value={finalWeight} 
                                         onChange={(e) => handleNumberChange(e, setFinalWeight)} 
+                                        className="col-span-3" 
+                                        placeholder="e.g., 95" 
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="dyeing_roll" className="text-right">Jumlah Rol Akhir</Label>
+                                    <Input 
+                                        id="dyeing_roll" 
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={dyeingRoll} 
+                                        onChange={(e) => handleNumberChange(e, setDyeingRoll)} 
                                         className="col-span-3" 
                                         placeholder="e.g., 95" 
                                     />

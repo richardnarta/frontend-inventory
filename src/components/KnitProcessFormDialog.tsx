@@ -44,9 +44,10 @@ export const CreateUpdateKnitProcessFormDialog = ({
     const [selectedOperatorId, setSelectedOperatorId] = useState('');
     const [selectedMachineId, setSelectedMachineId] = useState('');
     const [actualWeight, setActualWeight] = useState('0');
+    const [rollCount, setRollCount] = useState('');
     const [knitStatus, setKnitStatus] = useState('false');
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-    const [endTime, setEndTime] = useState({ hours: '00', minutes: '00' });
+    const [endTime, setEndTime] = useState({ hours: '', minutes: '' });
     const [isSaving, setIsSaving] = useState(false);
 
     // Fetch operators and machines
@@ -74,9 +75,10 @@ export const CreateUpdateKnitProcessFormDialog = ({
                     hours: String(endDateTime.getHours()).padStart(2, '0'),
                     minutes: String(endDateTime.getMinutes()).padStart(2, '0'),
                 });
+                setRollCount(formatNumber(process.roll_count))
             } else {
                 setEndDate(undefined);
-                setEndTime({ hours: '00', minutes: '00' });
+                setEndTime({ hours: '', minutes: '' });
             }
         } else if (initialFormulaId) {
             setSelectedFormulaId(initialFormulaId);
@@ -85,7 +87,7 @@ export const CreateUpdateKnitProcessFormDialog = ({
             setActualWeight('0');
             setKnitStatus('false');
             setEndDate(undefined);
-            setEndTime({ hours: '00', minutes: '00' });
+            setEndTime({ hours: '', minutes: '' });
         } else {
             setSelectedFormulaId('');
             setSelectedOperatorId('');
@@ -93,7 +95,7 @@ export const CreateUpdateKnitProcessFormDialog = ({
             setActualWeight('0');
             setKnitStatus('false');
             setEndDate(undefined);
-            setEndTime({ hours: '00', minutes: '00' });
+            setEndTime({ hours: '', minutes: '' });
         }
     }, [process, initialFormulaId]);
 
@@ -118,7 +120,7 @@ export const CreateUpdateKnitProcessFormDialog = ({
 
     const isStatusTrue = knitStatus === 'true';
     const isFormInvalid = process 
-        ? (isStatusTrue && !endDate) // For update: if status is true, end_date is required
+        ? (isStatusTrue && !endDate && !rollCount) // For update: if status is true, end_date is required
         : (!selectedFormulaId || !selectedOperatorId || !selectedMachineId || (parseIndonesianNumber(actualWeight) || 0) <= 0); // For create
 
     const handleSubmit = async () => {
@@ -127,7 +129,7 @@ export const CreateUpdateKnitProcessFormDialog = ({
         if (process) {
             // Update mode
             let endDateTime: string | undefined = undefined;
-            if (isStatusTrue && endDate) {
+            if (isStatusTrue && endDate && rollCount) {
                 const year = endDate.getFullYear();
                 const month = String(endDate.getMonth() + 1).padStart(2, '0');
                 const day = String(endDate.getDate()).padStart(2, '0');
@@ -142,6 +144,7 @@ export const CreateUpdateKnitProcessFormDialog = ({
                 machine_id: Number(selectedMachineId) || undefined,
                 knit_status: isStatusTrue || undefined,
                 end_date: endDateTime,
+                roll_count: parseIndonesianNumber(rollCount)
             };
             await onSave(dataToSave);
         } else {
@@ -170,6 +173,22 @@ export const CreateUpdateKnitProcessFormDialog = ({
     const machineOptions = useMemo(() => 
         (machineData?.items || []).map(m => ({ value: String(m.id), label: m.name }))
     , [machineData]);
+
+    const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string) => void) => {
+        const { value } = e.target;
+        let cleanedValue = value.replace(/[^\d,]/g, '');
+        const parts = cleanedValue.split(',');
+        if (parts.length > 2) cleanedValue = parts[0] + ',' + parts.slice(1).join('');
+        if (cleanedValue === '') {
+            setter('');
+            return;
+        }
+        const [integerPart, decimalPart] = cleanedValue.split(',');
+        const formattedInteger = new Intl.NumberFormat('id-ID').format(Number(integerPart.replace(/\./g, '')));
+        let finalValue = formattedInteger;
+        if (decimalPart !== undefined) finalValue += ',' + decimalPart;
+        setter(finalValue);
+    };
 
     return (
         <DialogContent className="sm:max-w-2xl">
@@ -363,6 +382,19 @@ export const CreateUpdateKnitProcessFormDialog = ({
                                         />
                                         <span className="text-sm text-gray-500">(HH:MM)</span>
                                     </div>
+                                </div>
+
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="knit_roll" className="col-span-1 text-right">Jumlah Rol</Label>
+                                    <Input 
+                                        id="knit_roll" 
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={rollCount} 
+                                        onChange={(e) => handleNumberChange(e, setRollCount)} 
+                                        className="col-span-3" 
+                                        placeholder="e.g., 100" 
+                                    />
                                 </div>
                             </>
                         )}
