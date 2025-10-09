@@ -3,7 +3,7 @@ import type { KnittingProcessData, KnittingProcessCreatePayload, KnittingProcess
 import type { KnitFormulaData, FormulaItem } from '@/model/knit_formula';
 
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Save, Loader2, Clock } from 'lucide-react';
 import { cn, parseIndonesianNumber, formatNumber } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -12,8 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Save, Loader2 } from 'lucide-react';
-import { Dropdown } from './Dropdown';
+import { Dropdown, type DropdownItem } from './Dropdown';
+import { useQuery } from '@tanstack/react-query';
+import { getOperators } from '@/service/operator';
+import { getMachines } from '@/service/machine';
 
 type CreateUpdateKnitProcessFormDialogProps = {
     process?: KnittingProcessData;
@@ -23,6 +25,11 @@ type CreateUpdateKnitProcessFormDialogProps = {
     isFormulasLoading: boolean;
     initialFormulaId?: string;
 };
+
+const statusOptions: DropdownItem[] = [
+    { value: 'false', label: 'Belum Rajut' },
+    { value: 'true', label: 'Sudah Rajut' },
+];
 
 export const CreateUpdateKnitProcessFormDialog = ({
     process,
@@ -34,23 +41,59 @@ export const CreateUpdateKnitProcessFormDialog = ({
 }: CreateUpdateKnitProcessFormDialogProps) => {
     
     const [selectedFormulaId, setSelectedFormulaId] = useState('');
-    const [date, setDate] = useState<Date>(new Date());
+    const [selectedOperatorId, setSelectedOperatorId] = useState('');
+    const [selectedMachineId, setSelectedMachineId] = useState('');
     const [actualWeight, setActualWeight] = useState('0');
+    const [knitStatus, setKnitStatus] = useState('false');
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [endTime, setEndTime] = useState({ hours: '00', minutes: '00' });
     const [isSaving, setIsSaving] = useState(false);
+
+    // Fetch operators and machines
+    const { data: operatorData, isLoading: isOperatorsLoading } = useQuery({
+        queryKey: ['operators-all'],
+        queryFn: () => getOperators({}, 1, 9999),
+    });
+
+    const { data: machineData, isLoading: isMachinesLoading } = useQuery({
+        queryKey: ['machines-all'],
+        queryFn: () => getMachines({}, 1, 9999),
+    });
 
     useEffect(() => {
         if (process) {
             setSelectedFormulaId(String(process.knit_formula.id));
-            setDate(new Date(process.date));
+            setSelectedOperatorId(String(process.operator.id));
+            setSelectedMachineId(String(process.machine.id));
             setActualWeight(formatNumber(process.weight_kg));
+            setKnitStatus(String(process.knit_status));
+            if (process.end_date) {
+                const endDateTime = new Date(process.end_date);
+                setEndDate(endDateTime);
+                setEndTime({
+                    hours: String(endDateTime.getHours()).padStart(2, '0'),
+                    minutes: String(endDateTime.getMinutes()).padStart(2, '0'),
+                });
+            } else {
+                setEndDate(undefined);
+                setEndTime({ hours: '00', minutes: '00' });
+            }
         } else if (initialFormulaId) {
             setSelectedFormulaId(initialFormulaId);
-            setDate(new Date());
+            setSelectedOperatorId('');
+            setSelectedMachineId('');
             setActualWeight('0');
+            setKnitStatus('false');
+            setEndDate(undefined);
+            setEndTime({ hours: '00', minutes: '00' });
         } else {
             setSelectedFormulaId('');
-            setDate(new Date());
+            setSelectedOperatorId('');
+            setSelectedMachineId('');
             setActualWeight('0');
+            setKnitStatus('false');
+            setEndDate(undefined);
+            setEndTime({ hours: '00', minutes: '00' });
         }
     }, [process, initialFormulaId]);
 
@@ -64,7 +107,7 @@ export const CreateUpdateKnitProcessFormDialog = ({
         }
         const weight = parseIndonesianNumber(actualWeight) || 0;
         if (weight <= 0) {
-            return selectedFormula.formula; // Return original if actual weight is 0
+            return selectedFormula.formula;
         }
         const ratio = weight / selectedFormula.production_weight;
         return selectedFormula.formula.map(material => ({
@@ -73,16 +116,45 @@ export const CreateUpdateKnitProcessFormDialog = ({
         }));
     }, [selectedFormula, actualWeight]);
 
-    const isFormInvalid = !selectedFormulaId || (parseIndonesianNumber(actualWeight) || 0) <= 0;
+    const isStatusTrue = knitStatus === 'true';
+    const isFormInvalid = process 
+        ? (isStatusTrue && !endDate) // For update: if status is true, end_date is required
+        : (!selectedFormulaId || !selectedOperatorId || !selectedMachineId || (parseIndonesianNumber(actualWeight) || 0) <= 0); // For create
 
     const handleSubmit = async () => {
         setIsSaving(true);
-        const dataToSave = {
-            knit_formula_id: Number(selectedFormulaId),
-            date: format(date, "yyyy-MM-dd"),
-            weight_kg: parseIndonesianNumber(actualWeight) || 0,
-        };
-        await onSave(dataToSave);
+        
+        if (process) {
+            // Update mode
+            let endDateTime: string | undefined = undefined;
+            if (isStatusTrue && endDate) {
+                const year = endDate.getFullYear();
+                const month = String(endDate.getMonth() + 1).padStart(2, '0');
+                const day = String(endDate.getDate()).padStart(2, '0');
+                const hours = endTime.hours.padStart(2, '0');
+                const minutes = endTime.minutes.padStart(2, '0');
+                // Send as local datetime without timezone (no 'Z' suffix)
+                endDateTime = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+            }
+
+            const dataToSave: KnittingProcessUpdatePayload = {
+                operator_id: Number(selectedOperatorId) || undefined,
+                machine_id: Number(selectedMachineId) || undefined,
+                knit_status: isStatusTrue || undefined,
+                end_date: endDateTime,
+            };
+            await onSave(dataToSave);
+        } else {
+            // Create mode
+            const dataToSave: KnittingProcessCreatePayload = {
+                knit_formula_id: Number(selectedFormulaId),
+                operator_id: Number(selectedOperatorId),
+                machine_id: Number(selectedMachineId),
+                weight_kg: parseIndonesianNumber(actualWeight) || 0,
+            };
+            await onSave(dataToSave);
+        }
+        
         closeDialog();
         setIsSaving(false);
     };
@@ -91,48 +163,237 @@ export const CreateUpdateKnitProcessFormDialog = ({
         formulas.map(f => ({ value: String(f.id), label: f.product.name }))
     , [formulas]);
 
+    const operatorOptions = useMemo(() => 
+        (operatorData?.items || []).map(o => ({ value: String(o.id), label: o.name }))
+    , [operatorData]);
+
+    const machineOptions = useMemo(() => 
+        (machineData?.items || []).map(m => ({ value: String(m.id), label: m.name }))
+    , [machineData]);
+
     return (
         <DialogContent className="sm:max-w-2xl">
-            <DialogHeader><DialogTitle>{process ? 'Edit Proses Rajut' : 'Catat Proses Rajut Baru'}</DialogTitle></DialogHeader>
+            <DialogHeader>
+                <DialogTitle>{process ? 'Edit Proses Rajut' : 'Catat Proses Rajut Baru'}</DialogTitle>
+            </DialogHeader>
             <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-6">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-left col-span-1">Tanggal Rajut</Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant={"outline"} className={cn("col-span-3 justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date ? format(date, "dd-MM-yyyy") : <span>Pilih tanggal</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={(d) => setDate(d || new Date())} disabled={(d) => d > new Date() || d < new Date("1900-01-01")} /></PopoverContent>
-                    </Popover>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="formula" className="text-right">Formula Kain</Label>
-                    <Dropdown items={formulaOptions} value={selectedFormulaId} onChange={setSelectedFormulaId} placeholder='Pilih formula...' isLoading={isFormulasLoading} className="col-span-3" disabled={!!process} />
-                </div>
+                {!process && (
+                    <>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="formula" className="text-right">Formula Kain</Label>
+                            <Dropdown 
+                                items={formulaOptions} 
+                                value={selectedFormulaId} 
+                                onChange={setSelectedFormulaId} 
+                                placeholder='Pilih formula...' 
+                                isLoading={isFormulasLoading} 
+                                className="col-span-3" 
+                            />
+                        </div>
 
-                {selectedFormula && (
-                    <Card className="bg-gray-50 dark:bg-gray-900/50">
-                        <CardHeader><CardTitle className="text-base">Resep Standar</CardTitle><CardDescription>Formula asli untuk {formatNumber(selectedFormula.production_weight)} Kg kain.</CardDescription></CardHeader>
-                        <CardContent><ul className="space-y-1 text-sm">
-                            {selectedFormula.formula.map(item => <li key={item.inventory_id} className="flex justify-between"><span>- {item.inventory_name}</span><span className="font-medium">{formatNumber(item.amount_kg)} Kg</span></li>)}
-                        </ul></CardContent>
-                    </Card>
+                        {selectedFormula && (
+                            <Card className="bg-gray-50 dark:bg-gray-900/50">
+                                <CardHeader>
+                                    <CardTitle className="text-base">Resep Standar</CardTitle>
+                                    <CardDescription>Formula asli untuk {formatNumber(selectedFormula.production_weight)} Kg kain.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-1 text-sm">
+                                        {selectedFormula.formula.map(item => 
+                                            <li key={item.inventory_id} className="flex justify-between">
+                                                <span>- {item.inventory_name}</span>
+                                                <span className="font-medium">{formatNumber(item.amount_kg)} Kg</span>
+                                            </li>
+                                        )}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="weight_kg" className="col-span-1 text-left">Jumlah Produksi (Kg)</Label>
+                            <Input 
+                                id="weight_kg" 
+                                value={actualWeight} 
+                                onChange={e => setActualWeight(e.target.value)} 
+                                className="col-span-3" 
+                                placeholder="e.g., 100" 
+                            />
+                        </div>
+
+                        {finalMaterials.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">Bahan Terpakai</CardTitle>
+                                    <CardDescription>Kalkulasi bahan untuk {formatNumber(parseIndonesianNumber(actualWeight))} Kg kain.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-1 text-sm">
+                                        {finalMaterials.map(item => 
+                                            <li key={item.inventory_id} className="flex justify-between">
+                                                <span>- {item.inventory_name}</span>
+                                                <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                                    {formatNumber(item.amount_kg, {maximumFractionDigits: 2})} Kg
+                                                </span>
+                                            </li>
+                                        )}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </>
                 )}
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="weight_kg" className="col-span-1 text-left">Jumlah Produksi (Kg)</Label>
-                    <Input id="weight_kg" value={actualWeight} onChange={e => setActualWeight(e.target.value)} className="col-span-3" placeholder="e.g., 100" />
+                    <Label htmlFor="operator" className="text-right">Operator</Label>
+                    <Dropdown 
+                        items={operatorOptions} 
+                        value={selectedOperatorId} 
+                        onChange={setSelectedOperatorId} 
+                        placeholder='Pilih operator...' 
+                        isLoading={isOperatorsLoading} 
+                        className="col-span-3" 
+                        disabled={!!process}
+                    />
                 </div>
 
-                {finalMaterials.length > 0 && (
-                    <Card>
-                        <CardHeader><CardTitle className="text-base">Bahan Terpakai</CardTitle><CardDescription>Kalkulasi bahan untuk {formatNumber(parseIndonesianNumber(actualWeight))} Kg kain.</CardDescription></CardHeader>
-                        <CardContent><ul className="space-y-1 text-sm">
-                            {finalMaterials.map(item => <li key={item.inventory_id} className="flex justify-between"><span>- {item.inventory_name}</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatNumber(item.amount_kg, {maximumFractionDigits: 2})} Kg</span></li>)}
-                        </ul></CardContent>
-                    </Card>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="machine" className="text-right">Mesin</Label>
+                    <Dropdown 
+                        items={machineOptions} 
+                        value={selectedMachineId} 
+                        onChange={setSelectedMachineId} 
+                        placeholder='Pilih mesin...' 
+                        isLoading={isMachinesLoading} 
+                        className="col-span-3" 
+                        disabled={!!process}
+                    />
+                </div>
+
+                {process && (
+                    <>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="status" className="text-right">Status</Label>
+                            <Dropdown 
+                                items={statusOptions} 
+                                value={knitStatus} 
+                                onChange={setKnitStatus} 
+                                className="col-span-3" 
+                            />
+                        </div>
+
+                        {isStatusTrue && (
+                            <>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="end_date" className="text-right">Tanggal Selesai</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button 
+                                                variant={"outline"} 
+                                                className={cn(
+                                                    "col-span-3 justify-start text-left font-normal", 
+                                                    !endDate && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {endDate ? format(endDate, "dd-MM-yyyy") : <span>Pilih tanggal selesai</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar 
+                                                mode="single" 
+                                                selected={endDate} 
+                                                onSelect={(d) => setEndDate(d || undefined)} 
+                                                disabled={(d) => d > new Date() || d < new Date("1900-01-01")} 
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="end_time" className="text-right">Waktu Selesai</Label>
+                                    <div className="col-span-3 flex items-center gap-2">
+                                        <Clock className="h-4 w-4 text-gray-500" />
+                                        <Input
+                                            id="end_hours"
+                                            type="number"
+                                            min="0"
+                                            max="23"
+                                            value={endTime.hours}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === '') {
+                                                    setEndTime(prev => ({ ...prev, hours: '00' }));
+                                                } else if (parseInt(val) >= 0 && parseInt(val) <= 23) {
+                                                    setEndTime(prev => ({ ...prev, hours: val }));
+                                                }
+                                            }}
+                                            onBlur={(e) => {
+                                                const val = e.target.value;
+                                                if (val !== '') {
+                                                    setEndTime(prev => ({ ...prev, hours: val.padStart(2, '0') }));
+                                                }
+                                            }}
+                                            className="w-20 text-center"
+                                            placeholder="00"
+                                        />
+                                        <span className="text-lg font-semibold">:</span>
+                                        <Input
+                                            id="end_minutes"
+                                            type="number"
+                                            min="0"
+                                            max="59"
+                                            value={endTime.minutes}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === '') {
+                                                    setEndTime(prev => ({ ...prev, minutes: '00' }));
+                                                } else if (parseInt(val) >= 0 && parseInt(val) <= 59) {
+                                                    setEndTime(prev => ({ ...prev, minutes: val }));
+                                                }
+                                            }}
+                                            onBlur={(e) => {
+                                                const val = e.target.value;
+                                                if (val !== '') {
+                                                    setEndTime(prev => ({ ...prev, minutes: val.padStart(2, '0') }));
+                                                }
+                                            }}
+                                            className="w-20 text-center"
+                                            placeholder="00"
+                                        />
+                                        <span className="text-sm text-gray-500">(HH:MM)</span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        <Card className="bg-gray-50 dark:bg-gray-900/50">
+                            <CardHeader>
+                                <CardTitle className="text-base">Detail Proses</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Formula:</span>
+                                    <span className="font-medium">{process.knit_formula.product.name}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Berat Produksi:</span>
+                                    <span className="font-medium">{formatNumber(process.weight_kg)} Kg</span>
+                                </div>
+                                <div className="pt-2 border-t">
+                                    <p className="font-semibold mb-1">Bahan Terpakai:</p>
+                                    <ul className="space-y-1 pl-4">
+                                        {process.materials.map(item => 
+                                            <li key={item.inventory_id} className="flex justify-between text-xs">
+                                                <span>- {item.inventory_name}</span>
+                                                <span>{formatNumber(item.amount_kg, {maximumFractionDigits: 2})} Kg</span>
+                                            </li>
+                                        )}
+                                    </ul>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
                 )}
             </div>
             <DialogFooter>
@@ -145,4 +406,3 @@ export const CreateUpdateKnitProcessFormDialog = ({
         </DialogContent>
     );
 };
-

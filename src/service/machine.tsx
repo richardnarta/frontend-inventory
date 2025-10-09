@@ -1,10 +1,11 @@
-import { api } from "@/lib/utils";
+// service/machine.ts
 import axios from "axios";
-import type {
-  MachineListResponse,
-  SingleMachineResponse,
-  MachineCreatePayload,
-  MachineUpdatePayload,
+import { api } from "@/lib/utils";
+import { 
+    type MachineListResponse, 
+    type MachineCreatePayload, 
+    type MachineUpdatePayload,
+    type SingleMachineResponse
 } from "@/model/machine";
 
 export const getMachines = async (

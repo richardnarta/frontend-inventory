@@ -1,3 +1,4 @@
+// pages/SupplierPage.tsx
 import { useState } from 'react';
 import { RotateCcw, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 
@@ -141,6 +142,8 @@ export const SupplierPage = () => {
                                         <TableHead className="pl-6 py-4">ID Supplier</TableHead>
                                         <TableHead>Nama Supplier</TableHead>
                                         <TableHead>No. Telepon</TableHead>
+                                        <TableHead className="max-w-xs">Alamat</TableHead>
+                                        <TableHead className="max-w-xs">Catatan</TableHead>
                                         <TableHead className="text-center">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -150,6 +153,16 @@ export const SupplierPage = () => {
                                             <TableCell className='font-medium pl-6'>{`SUPPLIER-${data.id}`}</TableCell>
                                             <TableCell className="font-medium">{data.name}</TableCell>
                                             <TableCell>{data.phone_num || '-'}</TableCell>
+                                            <TableCell className="max-w-xs">
+                                                <div className="break-words whitespace-normal">
+                                                    {data.address || '-'}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="max-w-xs">
+                                                <div className="break-words whitespace-normal">
+                                                    {data.note || '-'}
+                                                </div>
+                                            </TableCell>
                                             <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
@@ -174,15 +187,35 @@ export const SupplierPage = () => {
                                 <Card key={data.id}>
                                     <CardHeader>
                                         <CardTitle className="flex justify-between items-center text-base">
-                                            <span>{data.name}</span>
-                                            <span className="text-sm font-mono text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                                            <span className="break-words">{data.name}</span>
+                                            <span className="text-sm font-mono text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded whitespace-nowrap ml-2">
                                                 ID: {`SUPPLIER-${data.id}`}
                                             </span>
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                        <div className="font-semibold text-gray-500">No. Telepon</div>
-                                        <div className="text-right">{data.phone_num || '-'}</div>
+                                    <CardContent className="space-y-3 text-sm">
+                                        <div className="grid grid-cols-2 gap-x-4">
+                                            <div className="font-semibold text-gray-500">No. Telepon</div>
+                                            <div className="text-right break-words">{data.phone_num || '-'}</div>
+                                        </div>
+
+                                        {data.address && (
+                                            <div className="pt-2 border-t">
+                                                <div className="font-semibold text-gray-500 mb-1">Alamat</div>
+                                                <div className="text-gray-700 dark:text-gray-300 break-words whitespace-normal">
+                                                    {data.address}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {data.note && (
+                                            <div className="pt-2 border-t">
+                                                <div className="font-semibold text-gray-500 mb-1">Catatan</div>
+                                                <div className="text-gray-700 dark:text-gray-300 break-words whitespace-normal">
+                                                    {data.note}
+                                                </div>
+                                            </div>
+                                        )}
                                     </CardContent>
                                     <CardFooter className="flex justify-end gap-2">
                                         <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>

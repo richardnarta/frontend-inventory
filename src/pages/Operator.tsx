@@ -1,13 +1,12 @@
-import { useNavigate } from 'react-router-dom';
-
+// pages/OperatorPage.tsx
 import { useState } from 'react';
-import { RotateCcw, Plus, Pencil, Trash2, Loader2, Eye } from 'lucide-react';
+import { RotateCcw, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog } from '@/components/ui/dialog';
 
 import { keepPreviousData, useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -16,98 +15,92 @@ import { toast } from 'sonner';
 import { PageHeading } from '@/components/PageHeading';
 import { Pagination } from '@/components/Pagination';
 import { DeleteConfirmationDialog } from '@/components/DeleteDialog';
-import { CreateUpdateMachineFormDialog } from '@/components/MachineFormDialog';
+import { CreateUpdateOperatorFormDialog } from '@/components/OperatorFormDialog';
 
-import type { MachineCreatePayload, MachineData, MachineUpdatePayload } from '@/model/machine';
-import { createMachine, deleteMachineById, getMachines, updateMachine } from '@/service/machine';
+import type { OperatorCreatePayload, OperatorData, OperatorUpdatePayload } from '@/model/operator';
+import { createOperator, deleteOperatorById, getOperators, updateOperator } from '@/service/operator';
 
-export const FactoryPage = () => {
+export const OperatorPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingMachine, setEditingMachine] = useState<MachineData | undefined>(undefined);
+    const [editingOperator, setEditingOperator] = useState<OperatorData | undefined>(undefined);
     const [searchName, setSearchName] = useState('');
 
     const itemsPerPage = 10;
     const queryClient = useQueryClient();
 
-    const navigate = useNavigate();
-
-    const { data: machineData, isLoading, error } = useQuery({
-        queryKey: ['machines', { name: searchName, page: currentPage }],
-        queryFn: () => getMachines({ name: searchName }, currentPage, itemsPerPage),
+    const { data: operatorData, isLoading, error } = useQuery({
+        queryKey: ['operators', { name: searchName, page: currentPage }],
+        queryFn: () => getOperators({ name: searchName }, currentPage, itemsPerPage),
         placeholderData: keepPreviousData,
     });
 
     const createMutation = useMutation({
-        mutationFn: createMachine,
+        mutationFn: createOperator,
         onSuccess: () => {
-            toast.success(`Data mesin baru berhasil dibuat.`);
-            queryClient.invalidateQueries({ queryKey: ['machines'] });
+            toast.success(`Data operator baru berhasil dibuat.`);
+            queryClient.invalidateQueries({ queryKey: ['operators'] });
         },
         onError: (error) => { toast.error(error.message); },
     });
 
     const updateMutation = useMutation({
-        mutationFn: (variables: MachineUpdatePayload & { id: number }) => {
+        mutationFn: (variables: OperatorUpdatePayload & { id: number }) => {
             const { id, ...data } = variables;
-            return updateMachine(id, data);
+            return updateOperator(id, data);
         },
         onSuccess: () => {
-            toast.success(`Data mesin berhasil diubah.`);
-            queryClient.invalidateQueries({ queryKey: ['machines'] });
+            toast.success(`Data operator berhasil diubah.`);
+            queryClient.invalidateQueries({ queryKey: ['operators'] });
         },
         onError: (error) => { toast.error(error.message); },
     });
 
     const deleteMutation = useMutation({
-        mutationFn: deleteMachineById,
+        mutationFn: deleteOperatorById,
         onSuccess: () => {
-            toast.success(`Data mesin berhasil dihapus.`);
-            queryClient.invalidateQueries({ queryKey: ['machines'] });
+            toast.success(`Data operator berhasil dihapus.`);
+            queryClient.invalidateQueries({ queryKey: ['operators'] });
         },
         onError: (error) => { toast.error(error.message); },
     });
 
-    const handleSave = async (data: MachineCreatePayload | MachineUpdatePayload) => {
-        if (editingMachine) {
-            updateMutation.mutate({ ...data, id: editingMachine.id });
+    const handleSave = async (data: OperatorCreatePayload | OperatorUpdatePayload) => {
+        if (editingOperator) {
+            updateMutation.mutate({ ...data, id: editingOperator.id });
         } else {
-            createMutation.mutate(data as MachineCreatePayload);
+            createMutation.mutate(data as OperatorCreatePayload);
         }
     };
     
     const handleDelete = (id: number) => deleteMutation.mutate(id);
-    const handleView = (machine: MachineData) => {
-        navigate(`/pabrik/mesin?id=${machine.id}&name=${machine.name}`)
-    };
-
     const handleReset = () => setSearchName('');
 
     const openAddDialog = () => {
-        setEditingMachine(undefined);
+        setEditingOperator(undefined);
         setIsFormOpen(true);
     };
 
-    const openEditDialog = (machine: MachineData) => {
-        setEditingMachine(machine);
+    const openEditDialog = (operator: OperatorData) => {
+        setEditingOperator(operator);
         setIsFormOpen(true);
     };
 
     const closeDialog = () => {
-        setEditingMachine(undefined);
+        setEditingOperator(undefined);
         setIsFormOpen(false);
     };
 
-    const machines = machineData?.items ?? [];
-    const totalPages = machineData?.total_pages ?? 1;
+    const operators = operatorData?.items ?? [];
+    const totalPages = operatorData?.total_pages ?? 1;
 
     return (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <PageHeading headingTitle={`Data Pabrik`} actionButton={() => {}}/>
+            <PageHeading headingTitle={`Data Operator`} actionButton={() => {}}/>
             <div className="bg-white dark:bg-gray-950 border p-4 rounded-xl shadow-sm mb-6">
                 <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                     <div>
-                        <Label htmlFor="searchName" className="block mb-2">Nama Mesin</Label>
+                        <Label htmlFor="searchName" className="block mb-2">Nama Operator</Label>
                         <Input 
                             id="searchName" 
                             placeholder="Cari berdasarkan nama..." 
@@ -120,7 +113,7 @@ export const FactoryPage = () => {
                             <RotateCcw className="mr-2 h-4 w-4" /> Reset Filter
                         </Button>
                         <Button className="bg-blue-500 hover:bg-blue-600" onClick={openAddDialog}>
-                            <Plus className="mr-2 h-4 w-4" /> Tambah Data Mesin
+                            <Plus className="mr-2 h-4 w-4" /> Tambah Data Operator
                         </Button>
                     </div>
                 </div>
@@ -135,35 +128,35 @@ export const FactoryPage = () => {
                     Error: {error instanceof Error ? error.message : 'Gagal mengambil data. Mohon coba lagi.'}
                 </div>
             ) : (
-                !machines.length ? (
+                !operators.length ? (
                     <div className="text-center p-8 text-gray-500 bg-gray-50 border rounded-xl shadow-sm">
-                        Data mesin kosong. Mohon tambahkan data baru.
+                        Data operator kosong. Mohon tambahkan data baru.
                     </div>
                 ) : (
                     <div>
+                        {/* Desktop Table */}
                         <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-blue-200 hover:bg-blue-200">
-                                        <TableHead className="pl-6 py-4">ID Mesin</TableHead>
-                                        <TableHead>Nama Mesin</TableHead>
+                                        <TableHead className="pl-6 py-4">ID Operator</TableHead>
+                                        <TableHead>Nama Operator</TableHead>
+                                        <TableHead>No. Telepon</TableHead>
                                         <TableHead className="text-center">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {machines.map((data) => (
+                                    {operators.map((data) => (
                                         <TableRow key={data.id}>
-                                            <TableCell className='pl-6'>{`Mesin-${data.id}`}</TableCell>
+                                            <TableCell className='font-medium pl-6'>{`OPERATOR-${data.id}`}</TableCell>
                                             <TableCell className="font-medium">{data.name}</TableCell>
+                                            <TableCell>{data.phone_num || '-'}</TableCell>
                                             <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <Button variant="outline" size="icon" onClick={() => handleView(data)}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
                                                     <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Button>
-                                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data mesin "${data.name}"?`}>
+                                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data operator "${data.name}"?`}>
                                                         <Button variant="destructive" size="icon">
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
@@ -176,25 +169,27 @@ export const FactoryPage = () => {
                             </Table>
                         </div>
 
+                        {/* Mobile Cards */}
                         <div className="grid gap-4 md:hidden">
-                            {machines.map((data) => (
+                            {operators.map((data) => (
                                 <Card key={data.id}>
                                     <CardHeader>
                                         <CardTitle className="flex justify-between items-center text-base">
-                                            <span>{data.name}</span>
-                                            <span className="text-sm font-mono text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                                                ID: {`Mesin-${data.id}`}
+                                            <span className="break-words">{data.name}</span>
+                                            <span className="text-sm font-mono text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded whitespace-nowrap ml-2">
+                                                ID: {`OPERATOR-${data.id}`}
                                             </span>
                                         </CardTitle>
                                     </CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                        <div className="font-semibold text-gray-500">No. Telepon</div>
+                                        <div className="text-right break-words">{data.phone_num || '-'}</div>
+                                    </CardContent>
                                     <CardFooter className="flex justify-end gap-2">
-                                        <Button variant="outline" size="icon" onClick={() => handleView(data)}>
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
                                         <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
                                             <Pencil className="h-4 w-4" />
                                         </Button>
-                                        <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data mesin "${data.name}"?`}>
+                                        <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data operator "${data.name}"?`}>
                                             <Button variant="destructive" size="icon">
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -215,8 +210,8 @@ export const FactoryPage = () => {
             )}
             
             {isFormOpen && (
-                <CreateUpdateMachineFormDialog
-                    machine={editingMachine}
+                <CreateUpdateOperatorFormDialog
+                    operator={editingOperator}
                     onSave={handleSave}
                     closeDialog={closeDialog}
                 />

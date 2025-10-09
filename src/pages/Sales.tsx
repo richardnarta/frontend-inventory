@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { RotateCcw, Plus, Pencil, Trash2, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { RotateCcw, Plus, Trash2, Loader2, Calendar as CalendarIcon, FileDown } from 'lucide-react';
 import { format } from "date-fns";
 import { type DateRange } from "react-day-picker";
+import * as XLSX from 'xlsx';
 
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell, TableFooter } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
@@ -32,6 +33,7 @@ export const SalesTransactionPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<SalesTransactionData | undefined>(undefined);
+    const [isExporting, setIsExporting] = useState(false);
     
     // Filter states
     const [buyerId, setBuyerId] = useState('');
@@ -72,7 +74,7 @@ export const SalesTransactionPage = () => {
             toast.success(`Transaksi penjualan baru berhasil dibuat.`);
             queryClient.invalidateQueries({ queryKey: ['sales-transactions'] });
         },
-        onError: (error) => { toast.error(error.message); },
+        onError: (error: Error) => { toast.error(error.message); },
     });
 
     const updateMutation = useMutation({
@@ -84,7 +86,7 @@ export const SalesTransactionPage = () => {
             toast.success(`Transaksi penjualan berhasil diubah.`);
             queryClient.invalidateQueries({ queryKey: ['sales-transactions'] });
         },
-        onError: (error) => { toast.error(error.message); },
+        onError: (error: Error) => { toast.error(error.message); },
     });
 
     const deleteMutation = useMutation({
@@ -93,7 +95,7 @@ export const SalesTransactionPage = () => {
             toast.success(`Transaksi penjualan berhasil dihapus.`);
             queryClient.invalidateQueries({ queryKey: ['sales-transactions'] });
         },
-        onError: (error) => { toast.error(error.message); },
+        onError: (error: Error) => { toast.error(error.message); },
     });
 
     const handleSave = async (data: SalesTransactionCreatePayload | SalesTransactionUpdatePayload) => {
@@ -111,13 +113,58 @@ export const SalesTransactionPage = () => {
         setDateRange(undefined);
     };
 
-    const openAddDialog = () => {
-        setEditingTransaction(undefined);
-        setIsFormOpen(true);
+    const handleExport = async () => {
+        setIsExporting(true);
+        toast.info("Mengekspor data... Ini mungkin memakan waktu beberapa saat.");
+        try {
+            const allTransactionsData = await getSalesTransactions({
+                buyer_id: buyerId ? parseInt(buyerId) : undefined,
+                inventory_id: inventoryId || undefined,
+                ...formattedDateRange
+            }, 1, 99999);
+
+            if (!allTransactionsData || allTransactionsData.items.length === 0) {
+                toast.warning("Tidak ada data untuk diekspor.");
+                return;
+            }
+
+            const dataToExport = allTransactionsData.items.map(data => ({
+                "Tanggal Transaksi": formatDate(data.transaction_date),
+                "Nama Pembeli": data.buyer?.name || '-',
+                "Nama Kain": data.inventory?.name || '-',
+                "Jumlah Roll": data.roll_count,
+                "Berat (Kg)": data.weight_kg,
+                "Harga per Kg": data.price_per_kg,
+                "Total": data.total
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data Penjualan");
+
+            worksheet['!cols'] = [
+                { wch: 20 }, // Tanggal Transaksi
+                { wch: 30 }, // Nama Pembeli
+                { wch: 30 }, // Nama Kain
+                { wch: 15 }, // Jumlah Roll
+                { wch: 15 }, // Berat (Kg)
+                { wch: 20 }, // Harga per Kg
+                { wch: 20 }  // Total
+            ];
+
+            XLSX.writeFile(workbook, `Data_Penjualan_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+
+            toast.success("Data berhasil diekspor!");
+        } catch (err) {
+            console.error("Export failed:", err);
+            toast.error("Gagal mengekspor data. Silakan coba lagi.");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
-    const openEditDialog = (transaction: SalesTransactionData) => {
-        setEditingTransaction(transaction);
+    const openAddDialog = () => {
+        setEditingTransaction(undefined);
         setIsFormOpen(true);
     };
 
@@ -131,7 +178,12 @@ export const SalesTransactionPage = () => {
 
     return (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <PageHeading headingTitle={`Menu Penjualan`} actionButton={() => {}} />
+            <PageHeading 
+                headingTitle={`Menu Penjualan`} 
+                actionButtonTitle={isExporting ? "Mengekspor..." : "Ekspor data penjualan"}
+                actionButtonIcon={isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileDown className="mr-2 h-4 w-4"/>} 
+                actionButton={handleExport}
+            />
             <div className="bg-white dark:bg-gray-950 border p-4 rounded-xl shadow-sm mb-6">
                 <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                     <div>
@@ -200,12 +252,12 @@ export const SalesTransactionPage = () => {
                 <div className="w-full h-96 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
             ) : error ? (
                 <div className="text-center p-8 text-red-500 bg-red-50 border rounded-xl shadow-sm">
-                    Error: {error.message}
+                    Error: {(error as Error).message}
                 </div>
             ) : (
                 !transactions.length ? (
                     <div className="text-center p-8 text-gray-500 bg-gray-50 border rounded-xl shadow-sm">
-                       Data transaksi penjualan kosong.
+                        Data transaksi penjualan kosong.
                     </div>
                 ) : (
                     <div>
@@ -232,7 +284,6 @@ export const SalesTransactionPage = () => {
                                             <TableCell className="text-right">{formatCurrency(data.price_per_kg)}</TableCell>
                                             <TableCell className="text-right font-semibold">{formatCurrency(data.total)}</TableCell>
                                             <TableCell className="text-center py-4"><div className="flex items-center justify-center gap-2">
-                                                <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}><Pencil className="h-4 w-4" /></Button>
                                                 <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus transaksi ini?`}><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button></DeleteConfirmationDialog>
                                             </div></TableCell>
                                         </TableRow>
@@ -265,7 +316,6 @@ export const SalesTransactionPage = () => {
                                         </div>
                                     </CardContent>
                                     <CardFooter className="flex justify-end gap-2">
-                                        <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}><Pencil className="h-4 w-4" /></Button>
                                         <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus transaksi ini?`}><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button></DeleteConfirmationDialog>
                                     </CardFooter>
                                 </Card>

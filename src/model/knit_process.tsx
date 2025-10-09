@@ -1,13 +1,22 @@
 import { type BaseListResponse, type BaseSingleResponse } from "./common";
-import { type KnitFormulaData, type FormulaItem } from "./knit_formula";
-
+import { type KnitFormulaData } from "./knit_formula";
+import { type OperatorData } from "./operator";
+import { type MachineData } from "./machine";
 
 export interface KnittingProcessData {
   id: number;
-  date: string; // "YYYY-MM-DD"
+  start_date: string; // ISO datetime
+  end_date: string | null; // ISO datetime
+  knit_status: boolean;
   weight_kg: number;
-  materials: FormulaItem[];
+  materials: {
+    inventory_id: string;
+    inventory_name: string;
+    amount_kg: number;
+  }[];
   knit_formula: KnitFormulaData;
+  operator: OperatorData;
+  machine: MachineData;
 }
 
 export interface KnittingProcessListResponse extends BaseListResponse {
@@ -15,13 +24,19 @@ export interface KnittingProcessListResponse extends BaseListResponse {
 }
 
 export interface SingleKnittingProcessResponse extends BaseSingleResponse {
-    data: KnittingProcessData;
+  data: KnittingProcessData;
 }
 
 export type KnittingProcessCreatePayload = {
   knit_formula_id: number;
-  date: string; // "YYYY-MM-DD"
+  operator_id: number;
+  machine_id: number;
   weight_kg: number;
 };
 
-export type KnittingProcessUpdatePayload = Partial<Omit<KnittingProcessCreatePayload, 'knit_formula_id'>>;
+export type KnittingProcessUpdatePayload = {
+  end_date?: string | null; // ISO datetime
+  knit_status?: boolean | null;
+  operator_id?: number | null;
+  machine_id?: number | null;
+};

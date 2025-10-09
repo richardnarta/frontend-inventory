@@ -1,6 +1,6 @@
+// model/account_receivable.ts
 import { type BuyerData } from "./buyer";
-import { type BaseListResponse } from "./common";
-
+import { type BaseListResponse, type BaseSingleResponse } from "./common";
 
 export interface AccountReceivableData {
   id: number;
@@ -15,6 +15,10 @@ export interface AccountReceivableData {
 
 export interface AccountReceivableListResponse extends BaseListResponse {
   items: AccountReceivableData[];
+}
+
+export interface SingleAccountReceivableResponse extends BaseSingleResponse {
+  data: AccountReceivableData;
 }
 
 export type AccountReceivableCreatePayload = {

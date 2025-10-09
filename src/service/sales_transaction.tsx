@@ -26,13 +26,13 @@ export const getSalesTransactions = async (
     ...filters,
   };
 
-  const response = await api.get('/v1/transaction/sales', { params });
+  const response = await api.get('/v1/sales-transaction', { params });
   return response.data;
 };
 
 export const createSalesTransaction = async (transactionData: SalesTransactionCreatePayload): Promise<SingleSalesTransactionResponse> => {
   try {
-    const response = await api.post('/v1/transaction/sales', transactionData);
+    const response = await api.post('/v1/sales-transaction', transactionData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -44,7 +44,7 @@ export const createSalesTransaction = async (transactionData: SalesTransactionCr
 
 export const updateSalesTransaction = async (id: number, transactionData: SalesTransactionUpdatePayload): Promise<SingleSalesTransactionResponse> => {
   try {
-    const response = await api.put(`/v1/transaction/sales/${id}`, transactionData);
+    const response = await api.put(`/v1/sales-transaction/${id}`, transactionData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -56,7 +56,7 @@ export const updateSalesTransaction = async (id: number, transactionData: SalesT
 
 export const deleteSalesTransactionById = async (id: number) => {
   try {
-    await api.delete(`/v1/transaction/sales/${id}`);
+    await api.delete(`/v1/sales-transaction/${id}`);
     return { message: 'Sales transaction deleted successfully' };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {

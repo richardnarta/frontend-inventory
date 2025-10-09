@@ -1,3 +1,4 @@
+// components/SupplierFormDialog.tsx
 import { useState, useMemo } from 'react';
 import type { SupplierData, SupplierCreatePayload, SupplierUpdatePayload } from '../model/supplier';
 
@@ -5,6 +6,7 @@ import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Save, Loader2 } from 'lucide-react';
 
 type CreateUpdateSupplierFormDialogProps = {
@@ -22,6 +24,8 @@ export const CreateUpdateSupplierFormDialog = ({
     const initialFormState = useMemo(() => ({
         name: supplier?.name || '',
         phone_num: supplier?.phone_num || '',
+        address: supplier?.address || '',
+        note: supplier?.note || '',
     }), [supplier]);
 
     const [formData, setFormData] = useState(initialFormState);
@@ -31,7 +35,7 @@ export const CreateUpdateSupplierFormDialog = ({
         return JSON.stringify(formData) === JSON.stringify(initialFormState);
     }, [formData, initialFormState]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
@@ -41,6 +45,8 @@ export const CreateUpdateSupplierFormDialog = ({
         const dataToSave = {
             ...formData,
             phone_num: formData.phone_num || null,
+            address: formData.address || null,
+            note: formData.note || null,
         };
         await onSave(dataToSave);
         closeDialog();
@@ -48,7 +54,7 @@ export const CreateUpdateSupplierFormDialog = ({
     };
 
     return (
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
             <DialogHeader>
                 <DialogTitle>
                     {supplier ? 'Edit Data Supplier' : 'Tambah Data Supplier Baru'}
@@ -62,6 +68,14 @@ export const CreateUpdateSupplierFormDialog = ({
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="phone_num" className="text-right">No. Telepon</Label>
                     <Input id="phone_num" value={formData.phone_num ?? ''} onChange={handleChange} className="col-span-3" placeholder="(Opsional)" spellCheck="false" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="address" className="text-right">Alamat</Label>
+                    <Textarea id="address" value={formData.address ?? ''} onChange={handleChange} className="col-span-3" placeholder="(Opsional)" spellCheck="false" rows={3} />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="note" className="text-right">Catatan</Label>
+                    <Textarea id="note" value={formData.note ?? ''} onChange={handleChange} className="col-span-3" placeholder="(Opsional)" spellCheck="false" rows={3} />
                 </div>
             </div>
             <DialogFooter>

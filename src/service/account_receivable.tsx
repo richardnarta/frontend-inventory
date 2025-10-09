@@ -1,14 +1,15 @@
-import { api } from "../lib/utils";
+// service/account_receivable.ts
+import { api } from "@/lib/utils";
 import axios from "axios";
 import type { 
     AccountReceivableListResponse, 
     AccountReceivableCreatePayload,
-    AccountReceivableUpdatePayload
-} from "../model/account_receivable";
-
+    AccountReceivableUpdatePayload,
+    SingleAccountReceivableResponse
+} from "@/model/account_receivable";
 
 export const getAccountReceivables = async (
-    filters: { buyer_id?: string; period?: string },
+    filters: { buyer_id?: number; period?: string },
     page: number = 1,
     limit: number = 10
 ): Promise<AccountReceivableListResponse> => {
@@ -18,13 +19,13 @@ export const getAccountReceivables = async (
         ...filters
     };
 
-    const response = await api.get('/v1/acc-receivable', { params });
+    const response = await api.get('/v1/account-receivable', { params });
     return response.data;
 };
 
-export const createAccountReceivable = async (receivableData: AccountReceivableCreatePayload) => {
+export const createAccountReceivable = async (receivableData: AccountReceivableCreatePayload): Promise<SingleAccountReceivableResponse> => {
     try {
-        const response = await api.post('/v1/acc-receivable', receivableData);
+        const response = await api.post('/v1/account-receivable', receivableData);
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
@@ -34,9 +35,9 @@ export const createAccountReceivable = async (receivableData: AccountReceivableC
     }
 };
 
-export const updateAccountReceivable = async (id: number, receivableData: AccountReceivableUpdatePayload) => {
+export const updateAccountReceivable = async (id: number, receivableData: AccountReceivableUpdatePayload): Promise<SingleAccountReceivableResponse> => {
     try {
-        const response = await api.put(`/v1/acc-receivable/${id}`, receivableData);
+        const response = await api.put(`/v1/account-receivable/${id}`, receivableData);
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
@@ -48,7 +49,7 @@ export const updateAccountReceivable = async (id: number, receivableData: Accoun
 
 export const deleteAccountReceivableById = async (id: number) => {
     try {
-        await api.delete(`/v1/acc-receivable/${id}`);
+        await api.delete(`/v1/account-receivable/${id}`);
         return { message: 'Account receivable deleted successfully' };
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {

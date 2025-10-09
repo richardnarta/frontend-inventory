@@ -1,3 +1,4 @@
+// components/AccountReceivableFormDialog.tsx
 import { useState, useMemo } from 'react';
 import { 
     type AccountReceivableData, 
@@ -10,35 +11,29 @@ import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-
 import { Save, Loader2 } from 'lucide-react';
 import { parseIndonesianNumber, formatNumber } from '../lib/utils';
 
-
 type CreateUpdateAccountReceivableFormDialogProps = {
-    buyers: DropdownItem[],
+    buyers: DropdownItem[];
     receivable?: AccountReceivableData;
-    onSave: (data: AccountReceivableCreatePayload) => Promise<void> | void;
-    onUpdate: (data: AccountReceivableUpdatePayload) => Promise<void> | void;
+    onSave: (data: AccountReceivableCreatePayload | AccountReceivableUpdatePayload) => Promise<void> | void;
     closeDialog: () => void;
 };
-
 
 export const CreateUpdateAccountReceivableFormDialog = ({
     buyers,
     receivable,
     onSave,
-    onUpdate,
     closeDialog
 }: CreateUpdateAccountReceivableFormDialogProps) => {
     const initialFormState = useMemo(() => ({
         buyer_id: receivable?.buyer?.id ? String(receivable.buyer.id) : '',
-        buyer_name: receivable?.buyer?.name || '',
         period: receivable?.period || '',
-        age_0_30_days: receivable?.age_0_30_days ? formatNumber(receivable.age_0_30_days) : 0,
-        age_31_60_days: receivable?.age_31_60_days ? formatNumber(receivable.age_31_60_days) : 0,
-        age_61_90_days: receivable?.age_61_90_days ? formatNumber(receivable.age_61_90_days) : 0,
-        age_over_90_days: receivable?.age_over_90_days ? formatNumber(receivable.age_over_90_days) : 0,
+        age_0_30_days: receivable?.age_0_30_days ? formatNumber(receivable.age_0_30_days) : '0',
+        age_31_60_days: receivable?.age_31_60_days ? formatNumber(receivable.age_31_60_days) : '0',
+        age_61_90_days: receivable?.age_61_90_days ? formatNumber(receivable.age_61_90_days) : '0',
+        age_over_90_days: receivable?.age_over_90_days ? formatNumber(receivable.age_over_90_days) : '0',
     }), [receivable]);
 
     const [formData, setFormData] = useState(initialFormState);
@@ -61,7 +56,7 @@ export const CreateUpdateAccountReceivableFormDialog = ({
             cleanedValue = parts[0] + ',' + parts.slice(1).join('');
         }
         if (cleanedValue === '') {
-            setFormData(prev => ({ ...prev, [id]: '' }));
+            setFormData(prev => ({ ...prev, [id]: '0' }));
             return;
         }
         const [integerPart, decimalPart] = cleanedValue.split(',');
@@ -85,18 +80,13 @@ export const CreateUpdateAccountReceivableFormDialog = ({
             age_61_90_days: parseIndonesianNumber(formData.age_61_90_days) || 0,
             age_over_90_days: parseIndonesianNumber(formData.age_over_90_days) || 0,
         };
-        if (receivable != undefined) {
-            await onUpdate(dataToSave)
-        } else {
-            await onSave(dataToSave)
-        }
-        
+        await onSave(dataToSave);
         closeDialog();
         setIsSaving(false);
     };
 
     return (
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
             <DialogHeader>
                 <DialogTitle>
                     {receivable ? 'Edit Data Piutang' : 'Tambah Data Piutang Baru'}
@@ -117,23 +107,62 @@ export const CreateUpdateAccountReceivableFormDialog = ({
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="period" className="text-right">Periode</Label>
-                    <Input id="period" value={formData.period} onChange={handleChange} className="col-span-3" placeholder="e.g., Apr-25" spellCheck="false" />
+                    <Input 
+                        id="period" 
+                        value={formData.period} 
+                        onChange={handleChange} 
+                        className="col-span-3" 
+                        placeholder="e.g., Oct-25" 
+                        spellCheck="false" 
+                    />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="age_0_30_days" className="text-right">0-30 Hari</Label>
-                    <Input id="age_0_30_days" type="text" inputMode="decimal" value={formData.age_0_30_days} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 1.500.000" />
+                    <Input 
+                        id="age_0_30_days" 
+                        type="text" 
+                        inputMode="decimal" 
+                        value={formData.age_0_30_days} 
+                        onChange={handleNumberChange} 
+                        className="col-span-3" 
+                        placeholder="e.g., 1.500.000" 
+                    />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="age_31_60_days" className="text-right">31-60 Hari</Label>
-                    <Input id="age_31_60_days" type="text" inputMode="decimal" value={formData.age_31_60_days} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 2.000.000" />
+                    <Input 
+                        id="age_31_60_days" 
+                        type="text" 
+                        inputMode="decimal" 
+                        value={formData.age_31_60_days} 
+                        onChange={handleNumberChange} 
+                        className="col-span-3" 
+                        placeholder="e.g., 2.000.000" 
+                    />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="age_61_90_days" className="text-right">61-90 Hari</Label>
-                    <Input id="age_61_90_days" type="text" inputMode="decimal" value={formData.age_61_90_days} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 500.000" />
+                    <Input 
+                        id="age_61_90_days" 
+                        type="text" 
+                        inputMode="decimal" 
+                        value={formData.age_61_90_days} 
+                        onChange={handleNumberChange} 
+                        className="col-span-3" 
+                        placeholder="e.g., 500.000" 
+                    />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="age_over_90_days" className="text-right">&gt;90 Hari</Label>
-                    <Input id="age_over_90_days" type="text" inputMode="decimal" value={formData.age_over_90_days} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 100.000" />
+                    <Input 
+                        id="age_over_90_days" 
+                        type="text" 
+                        inputMode="decimal" 
+                        value={formData.age_over_90_days} 
+                        onChange={handleNumberChange} 
+                        className="col-span-3" 
+                        placeholder="e.g., 100.000" 
+                    />
                 </div>
             </div>
             <DialogFooter>

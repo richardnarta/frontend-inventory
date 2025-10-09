@@ -1,5 +1,5 @@
+// model/machine.ts
 import { type BaseListResponse, type BaseSingleResponse } from "./common";
-
 
 export interface MachineData {
   id: number;

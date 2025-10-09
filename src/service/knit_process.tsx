@@ -8,9 +8,9 @@ import type {
 } from "@/model/knit_process";
 
 export type KnittingProcessFilters = {
-    knit_formula_id?: number | null;
-    start_date?: string | null; // "YYYY-MM-DD"
-    end_date?: string | null;   // "YYYY-MM-DD"
+  knit_formula_id?: number | null;
+  start_date?: string | null; // "YYYY-MM-DD"
+  end_date?: string | null;   // "YYYY-MM-DD"
 };
 
 export const getKnitProcesses = async (
@@ -19,13 +19,15 @@ export const getKnitProcesses = async (
   limit: number = 10
 ): Promise<KnittingProcessListResponse> => {
   const params = { page, limit, ...filters };
-  const response = await api.get('/v1/knit', { params });
+  const response = await api.get('/v1/knitting-process', { params });
   return response.data;
 };
 
-export const createKnitProcess = async (processData: KnittingProcessCreatePayload): Promise<SingleKnittingProcessResponse> => {
+export const createKnitProcess = async (
+  processData: KnittingProcessCreatePayload
+): Promise<SingleKnittingProcessResponse> => {
   try {
-    const response = await api.post('/v1/knit', processData);
+    const response = await api.post('/v1/knitting-process', processData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -35,9 +37,12 @@ export const createKnitProcess = async (processData: KnittingProcessCreatePayloa
   }
 };
 
-export const updateKnitProcess = async (id: number, processData: KnittingProcessUpdatePayload): Promise<SingleKnittingProcessResponse> => {
+export const updateKnitProcess = async (
+  id: number,
+  processData: KnittingProcessUpdatePayload
+): Promise<SingleKnittingProcessResponse> => {
   try {
-    const response = await api.put(`/v1/knit/${id}`, processData);
+    const response = await api.put(`/v1/knitting-process/${id}`, processData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -49,7 +54,7 @@ export const updateKnitProcess = async (id: number, processData: KnittingProcess
 
 export const deleteKnitProcessById = async (id: number) => {
   try {
-    await api.delete(`/v1/knit/${id}`);
+    await api.delete(`/v1/knitting-process/${id}`);
     return { message: 'Knitting process log deleted successfully' };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {

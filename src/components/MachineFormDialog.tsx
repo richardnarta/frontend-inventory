@@ -1,3 +1,4 @@
+// components/MachineFormDialog.tsx
 import { useState, useMemo } from 'react';
 import type { MachineData, MachineCreatePayload, MachineUpdatePayload } from '../model/machine';
 
@@ -52,7 +53,14 @@ export const CreateUpdateMachineFormDialog = ({
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">Nama Mesin</Label>
-                    <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" spellCheck="false" />
+                    <Input 
+                        id="name" 
+                        value={formData.name} 
+                        onChange={handleChange} 
+                        className="col-span-3" 
+                        spellCheck="false"
+                        placeholder="Masukkan nama mesin"
+                    />
                 </div>
             </div>
             <DialogFooter>

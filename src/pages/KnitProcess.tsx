@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Dialog } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
 
 import { keepPreviousData, useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -24,7 +25,12 @@ import { CreateUpdateKnitProcessFormDialog } from '@/components/KnitProcessFormD
 import { getKnitFormulas } from '@/service/knit_formula';
 import { createKnitProcess, deleteKnitProcessById, getKnitProcesses, updateKnitProcess } from '@/service/knit_process';
 import type { KnittingProcessCreatePayload, KnittingProcessData, KnittingProcessUpdatePayload } from '@/model/knit_process';
-import { cn, formatDate, formatNumber } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
+
+const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return format(date, "dd-MM-yyyy HH:mm");
+};
 
 export const KnitProcessPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -150,7 +156,7 @@ export const KnitProcessPage = () => {
                         <Dropdown items={formulaOptions} value={formulaId} onChange={setFormulaId} placeholder='Semua Formula' isLoading={isFormulasLoading} />
                     </div>
                     <div>
-                         <Label className="block mb-2">Rentang Tanggal</Label>
+                         <Label className="block mb-2">Rentang Tanggal Mulai</Label>
                          <Popover>
                             <PopoverTrigger asChild><Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -189,18 +195,23 @@ export const KnitProcessPage = () => {
                     <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
                         <Table>
                             <TableHeader><TableRow className="bg-blue-200 hover:bg-blue-200">
-                                <TableHead className="pl-6 py-4">Tanggal Rajut</TableHead>
+                                <TableHead className="pl-6 py-4">Tanggal Mulai</TableHead>
+                                <TableHead>Tanggal Selesai</TableHead>
                                 <TableHead>Nama Kain</TableHead>
                                 <TableHead>Bahan Terpakai</TableHead>
-                                <TableHead className="text-right">Jumlah Produksi (Kg)</TableHead>
+                                <TableHead>Operator</TableHead>
+                                <TableHead>Mesin</TableHead>
+                                <TableHead className="text-center">Status</TableHead>
+                                <TableHead className="text-right">Berat (Kg)</TableHead>
                                 <TableHead className="text-center">Aksi</TableHead>
                             </TableRow></TableHeader>
                             <TableBody>
                                 {processes.map((data) => (
                                     <TableRow key={data.id}>
-                                        <TableCell className='pl-6'>{formatDate(data.date)}</TableCell>
+                                        <TableCell className='pl-6'>{formatDateTime(data.start_date)}</TableCell>
+                                        <TableCell>{data.end_date ? formatDateTime(data.end_date) : '-'}</TableCell>
                                         <TableCell>{data.knit_formula.product.name}</TableCell>
-                                        <TableCell className="py-4">
+                                        <TableCell className='py-4'>
                                             <ul className="space-y-1">
                                                 {data.materials.map((item, index) => (
                                                     <li key={index} className="text-s">
@@ -209,11 +220,28 @@ export const KnitProcessPage = () => {
                                                 ))}
                                             </ul>
                                         </TableCell>
+                                        <TableCell>{data.operator.name}</TableCell>
+                                        <TableCell>{data.machine.name}</TableCell>
+                                        <TableCell className="text-center">
+                                            {data.knit_status ? (
+                                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-200">Sudah Rajut</Badge>
+                                            ) : (
+                                                <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-200">Belum Rajut</Badge>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="text-right font-semibold">{formatNumber(data.weight_kg)}</TableCell>
-                                        <TableCell className="text-center"><div className="flex items-center justify-center gap-2">
-                                            <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}><Pencil className="h-4 w-4" /></Button>
-                                            <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title="Hapus catatan proses rajut ini?"><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button></DeleteConfirmationDialog>
-                                        </div></TableCell>
+                                        <TableCell className="text-center">
+                                            <div className="flex items-center justify-center gap-2">
+                                                {!data.knit_status && (
+                                                    <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title="Hapus catatan proses rajut ini?">
+                                                    <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                                                </DeleteConfirmationDialog>
+                                            </div>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -225,23 +253,46 @@ export const KnitProcessPage = () => {
                                 <CardHeader>
                                     <CardTitle className="flex justify-between items-center">
                                         <span>{data.knit_formula.product.name}</span>
-                                        <span className="text-sm font-normal text-gray-500">{formatDate(data.date)}</span>
+                                        {data.knit_status ? (
+                                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-200">Sudah Rajut</Badge>
+                                        ) : (
+                                            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-200">Belum Rajut</Badge>
+                                        )}
                                     </CardTitle>
-                                    <div className="text-sm font-normal text-gray-500">{`Jumlah Produksi : ${formatNumber(data.weight_kg)}`} Kg</div>
                                 </CardHeader>
-                                <CardContent>
-                                    <p className="font-semibold text-sm mb-2">Bahan Terpakai:</p>
-                                    <ul className="space-y-1 pl-4 list-disc">
-                                        {data.materials.map((item, index) => (
-                                            <li key={index} className="text-sm text-gray-600 dark:text-gray-400">
-                                                <span className="font-mono text-xs">({item.inventory_id})</span> {item.inventory_name} : <span className="font-semibold">{formatNumber(item.amount_kg, {maximumFractionDigits: 2})} Kg</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                <CardContent className="space-y-3 text-sm">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <span className="font-semibold text-gray-500">Tanggal Mulai:</span>
+                                        <span>{formatDateTime(data.start_date)}</span>
+                                        <span className="font-semibold text-gray-500">Tanggal Selesai:</span>
+                                        <span>{data.end_date ? formatDateTime(data.end_date) : '-'}</span>
+                                        <span className="font-semibold text-gray-500">Operator:</span>
+                                        <span>{data.operator.name}</span>
+                                        <span className="font-semibold text-gray-500">Mesin:</span>
+                                        <span>{data.machine.name}</span>
+                                        <span className="font-semibold text-gray-500">Berat:</span>
+                                        <span className="font-semibold">{formatNumber(data.weight_kg)} Kg</span>
+                                    </div>
+                                    <div className="pt-2 border-t">
+                                        <p className="font-semibold text-gray-500 mb-2">Bahan Terpakai:</p>
+                                        <ul className="space-y-1 pl-4 list-disc">
+                                            {data.materials.map((item, index) => (
+                                                <li key={index} className="text-sm text-gray-600 dark:text-gray-400">
+                                                    <span className="font-mono text-xs">({item.inventory_id})</span> {item.inventory_name} : <span className="font-semibold">{formatNumber(item.amount_kg, {maximumFractionDigits: 2})} Kg</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </CardContent>
                                 <CardFooter className="flex justify-end gap-2">
-                                    <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}><Pencil className="h-4 w-4" /></Button>
-                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title="Hapus catatan proses rajut ini?"><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button></DeleteConfirmationDialog>
+                                    {!data.knit_status && (
+                                        <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title="Hapus catatan proses rajut ini?">
+                                        <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                                    </DeleteConfirmationDialog>
                                 </CardFooter>
                             </Card>
                         ))}

@@ -1,32 +1,29 @@
-// components/BuyerFormDialog.tsx
+// components/OperatorFormDialog.tsx
 import { useState, useMemo } from 'react';
-import type { BuyerData, BuyerCreatePayload, BuyerUpdatePayload } from '../model/buyer';
+import type { OperatorData, OperatorCreatePayload, OperatorUpdatePayload } from '../model/operator';
 
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Save, Loader2 } from 'lucide-react';
 
-type CreateUpdateBuyerFormDialogProps = {
-    buyer?: BuyerData;
-    onSave: (data: BuyerCreatePayload | BuyerUpdatePayload) => Promise<void> | void;
+type CreateUpdateOperatorFormDialogProps = {
+    operator?: OperatorData;
+    onSave: (data: OperatorCreatePayload | OperatorUpdatePayload) => Promise<void> | void;
     closeDialog: () => void;
 };
 
-export const CreateUpdateBuyerFormDialog = ({
-    buyer,
+export const CreateUpdateOperatorFormDialog = ({
+    operator,
     onSave,
     closeDialog,
-}: CreateUpdateBuyerFormDialogProps) => {
+}: CreateUpdateOperatorFormDialogProps) => {
 
     const initialFormState = useMemo(() => ({
-        name: buyer?.name || '',
-        phone_num: buyer?.phone_num || '',
-        address: buyer?.address || '',
-        note: buyer?.note || '',
-    }), [buyer]);
+        name: operator?.name || '',
+        phone_num: operator?.phone_num || '',
+    }), [operator]);
 
     const [formData, setFormData] = useState(initialFormState);
     const [isSaving, setIsSaving] = useState(false);
@@ -35,7 +32,7 @@ export const CreateUpdateBuyerFormDialog = ({
         return JSON.stringify(formData) === JSON.stringify(initialFormState);
     }, [formData, initialFormState]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
@@ -45,8 +42,6 @@ export const CreateUpdateBuyerFormDialog = ({
         const dataToSave = {
             ...formData,
             phone_num: formData.phone_num || null,
-            address: formData.address || null,
-            note: formData.note || null,
         };
         await onSave(dataToSave);
         closeDialog();
@@ -54,28 +49,34 @@ export const CreateUpdateBuyerFormDialog = ({
     };
 
     return (
-        <DialogContent className="max-w-2xl">
+        <DialogContent>
             <DialogHeader>
                 <DialogTitle>
-                    {buyer ? 'Edit Data Pembeli' : 'Tambah Data Pembeli Baru'}
+                    {operator ? 'Edit Data Operator' : 'Tambah Data Operator Baru'}
                 </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Nama Pembeli</Label>
-                    <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" spellCheck="false" />
+                    <Label htmlFor="name" className="text-right">Nama Operator</Label>
+                    <Input 
+                        id="name" 
+                        value={formData.name} 
+                        onChange={handleChange} 
+                        className="col-span-3" 
+                        spellCheck="false"
+                        placeholder="Masukkan nama operator"
+                    />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="phone_num" className="text-right">No. Telepon</Label>
-                    <Input id="phone_num" value={formData.phone_num ?? ''} onChange={handleChange} className="col-span-3" placeholder="(Opsional)" spellCheck="false" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="address" className="text-right">Alamat</Label>
-                    <Textarea id="address" value={formData.address ?? ''} onChange={handleChange} className="col-span-3" placeholder="(Opsional)" spellCheck="false" rows={3} />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="note" className="text-right">Catatan</Label>
-                    <Textarea id="note" value={formData.note ?? ''} onChange={handleChange} className="col-span-3" placeholder="(Opsional)" spellCheck="false" rows={3} />
+                    <Input 
+                        id="phone_num" 
+                        value={formData.phone_num ?? ''} 
+                        onChange={handleChange} 
+                        className="col-span-3" 
+                        placeholder="(Opsional)" 
+                        spellCheck="false" 
+                    />
                 </div>
             </div>
             <DialogFooter>

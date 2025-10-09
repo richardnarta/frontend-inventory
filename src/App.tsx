@@ -5,12 +5,14 @@ import {
     Scissors, 
     Droplets, 
     Tag, 
-    Factory, 
+    Cog, 
     ShoppingCart,
+    ShoppingBasket,
     Spool,
     Layers,
     HandCoins,
-    Package
+    Package,
+    UserRoundPen
 } from 'lucide-react';
 import { 
     buttonVariants 
@@ -35,11 +37,11 @@ import { BuyerPage } from './pages/Buyer';
 import { SalesTransactionPage } from './pages/Sales';
 import { SupplierPage } from "./pages/Supplier";
 import { PurchaseTransactionPage } from "./pages/Purchase";
-import { DyeingPage } from "./pages/Dyeing";
-import { FactoryPage } from "./pages/Factory";
-import { MachineActivityPage } from "./pages/Machine";
+import { DyeingProcessPage } from "./pages/Dyeing";
+import { MachinePage } from "./pages/Machine";
 import { KnitFormulaPage } from "./pages/KnitFormula";
 import { KnitProcessPage } from "./pages/KnitProcess";
+import { OperatorPage } from "./pages/Operator";
 
 type NavGroup = { name: string; items: NavLinks[] }
 type NavLinks = { name: string; icon: React.ReactNode; path: string; };
@@ -62,7 +64,8 @@ const navGroup: NavGroup[] = [
     {
         name: 'Transaksi',
         items: [
-            { name: 'Menu Pembelian', icon: <ShoppingCart className="h-5 w-5" />, path: '/pembelian' },
+            { name: 'Menu Pembelian Benang', icon: <ShoppingCart className="h-5 w-5" />, path: '/pembelian-benang' },
+            { name: 'Menu Pembelian Kain', icon: <ShoppingBasket className="h-5 w-5" />, path: '/pembelian-kain' },
             { name: 'Menu Penjualan', icon: <Tag className="h-5 w-5" />, path: '/penjualan' },
             { name: 'Menu Piutang', icon: <CreditCard className="h-5 w-5" />, path: '/piutang' },
         ]
@@ -70,7 +73,8 @@ const navGroup: NavGroup[] = [
     {
         name: 'Manajemen Pabrik',
         items: [
-            { name: 'Data Pabrik', icon: <Factory className="h-5 w-5" />, path: '/pabrik' },
+            { name: 'Data Mesin', icon: <Cog className="h-5 w-5" />, path: '/mesin' },
+            { name: 'Data Operator', icon: <UserRoundPen className="h-5 w-5" />, path: '/operator' },
             { name: 'Data Pembeli', icon: <HandCoins className="h-5 w-5" />, path: '/pembeli' },
             { name: 'Data Supplier', icon: <Package className="h-5 w-5" />, path: '/supplier' }
         ]
@@ -136,12 +140,13 @@ function AppLayout() {
                     <Route path='/kain' element={<InventoryPage key="fabric-page" type='fabric' typeMessage='kain' />} />
                     <Route path='/rajut' element={<KnitProcessPage />} />
                     <Route path='/rajut/formula' element={<KnitFormulaPage />} />
-                    <Route path='/celup' element={<DyeingPage />} />
-                    <Route path='/pembelian' element={<PurchaseTransactionPage/>} />
+                    <Route path='/celup' element={<DyeingProcessPage />} />
+                    <Route path='/pembelian-benang' element={<PurchaseTransactionPage key="thread-page" type='thread' typeMessage='benang'/>} />
+                    <Route path='/pembelian-kain' element={<PurchaseTransactionPage key="fabric-page" type='fabric' typeMessage='kain'/>} />
                     <Route path='/penjualan' element={<SalesTransactionPage />} />
                     <Route path='/piutang' element={<AccountReceivablePage />} />
-                    <Route path='/pabrik' element={<FactoryPage />} />
-                    <Route path='/pabrik/mesin' element={<MachineActivityPage />} />
+                    <Route path='/mesin' element={<MachinePage />} />
+                    <Route path='/operator' element={<OperatorPage />} />
                     <Route path='/pembeli' element={<BuyerPage />} />
                     <Route path='/supplier' element={<SupplierPage />} />
                     <Route path="/" element={<Navigate to="/benang" />} />
