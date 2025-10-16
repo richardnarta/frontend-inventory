@@ -161,7 +161,7 @@ export const InventoryPage = ({ type, typeMessage }: InventoryPageProps) => {
                 </div>
             ) : (
                 productsData?.item_count == 0 ? (
-                    <div className="text-center p-8 text-black-500 bg-grey-50 border rounded-xl shadow-sm">
+                    <div className="text-center p-8 text-gray-500 bg-gray-50 border rounded-xl shadow-sm">
                         Data {typeMessage} kosong. Mohon tambahkan data baru.
                     </div>
                 ) : (
