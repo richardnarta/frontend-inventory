@@ -139,35 +139,60 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
                 return;
             }
 
+            let dateRangeString = `(${format(new Date(), 'dd-MM-yyyy')})`;
+            if (dateRange?.from) {
+                const startDate = format(dateRange.from, 'dd-MM-yyyy');
+                if (dateRange.to) {
+                    const endDate = format(dateRange.to, 'dd-MM-yyyy');
+                    dateRangeString = startDate === endDate ? `(${startDate})` : `(${startDate} sampai ${endDate})`;
+                } else {
+                    dateRangeString = `(mulai ${startDate})`;
+                }
+            }
+
+            // Create header row with title
+            const title = `Data Pembelian ${capitalize(typeMessage)} ${dateRangeString}`;
+
             // Map the fetched data to a more readable format for the Excel sheet.
-            const dataToExport = allTransactionsData.items.map(data => ({
-                "Tanggal Transaksi": formatDate(data.transaction_date),
-                "Nama Supplier": data.supplier?.name || '-',
-                [type === 'fabric' ? "Nama Kain" : "Nama Benang"]: data.inventory?.name || '-',
-                [type === 'fabric' ? "Jumlah Roll" : "Jumlah Bale"]: type === 'fabric' ? data.roll_count : data.bale_count,
-                "Berat (Kg)": data.weight_kg,
-                "Harga per Kg": data.price_per_kg,
-                "Total": data.total
-            }));
+            const header = [
+                "Tanggal Transaksi",
+                "Nama Supplier",
+                type === 'fabric' ? "Nama Kain" : "Nama Benang",
+                type === 'fabric' ? "Jumlah Roll" : "Jumlah Bale",
+                "Berat (Kg)",
+                "Harga per Kg",
+                "Total"
+            ];
+
+            const dataToExport = allTransactionsData.items.map(data => ([
+                formatDate(data.transaction_date),
+                data.supplier?.name || '-',
+                data.inventory?.name || '-',
+                type === 'fabric' ? data.roll_count : data.bale_count,
+                data.weight_kg,
+                data.price_per_kg,
+                data.total
+            ]));
 
             // Create a new worksheet and a new workbook.
-            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const worksheetData = [
+                [title], // Title row
+                [],      // Empty row for spacing
+                header,  // Header row
+                ...dataToExport
+            ];
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } }];
+            
+            worksheet['!cols'] = [
+                { wch: 20 }, { wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }
+            ];
+
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Data Pembelian");
             
-            // Set column widths for better readability in the exported file.
-            worksheet['!cols'] = [
-                { wch: 20 }, // Tanggal Transaksi
-                { wch: 30 }, // Nama Supplier
-                { wch: 30 }, // Nama Kain/Benang
-                { wch: 15 }, // Jumlah Roll/Bale
-                { wch: 15 }, // Berat (Kg)
-                { wch: 20 }, // Harga per Kg
-                { wch: 20 }  // Total
-            ];
-
-            // Trigger the file download on the user's computer.
-            XLSX.writeFile(workbook, `Data_Pembelian_${capitalize(typeMessage)}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+            const filename = `Data_Pembelian_${capitalize(typeMessage)}_${dateRangeString}.xlsx`;
+            XLSX.writeFile(workbook, filename);
 
             toast.success("Data berhasil diekspor!");
         } catch (err) {

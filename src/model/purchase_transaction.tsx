@@ -27,7 +27,6 @@ export type PurchaseTransactionCreatePayload = {
   transaction_date: string;
   supplier_id: number;
   inventory_id: string;
-  bale_count?: number;
   roll_count?: number;
   weight_kg?: number;
   price_per_kg: number;

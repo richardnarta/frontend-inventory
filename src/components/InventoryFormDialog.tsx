@@ -16,7 +16,7 @@ import { parseIndonesianNumber, formatNumber, capitalize } from '../lib/utils';
 type CreateUpdateInventoryFormDialogProps = {
     typeMessage: string,
     product?: InventoryData;
-    onSave: (data: Omit<InventoryData, 'total' | 'type'>) => Promise<void> | void;
+    onSave: (data: Omit<InventoryData, 'total' | 'type' | 'bale_count'>) => Promise<void> | void;
     closeDialog: () => void;
 };
 
@@ -33,7 +33,6 @@ export const CreateUpdateInventoryFormDialog = ({
         name: product?.name || '',
         roll_count: product?.roll_count ? formatNumber(product.roll_count) : 0,
         weight_kg: product?.weight_kg ? formatNumber(product.weight_kg) : 0,
-        bale_count: product?.bale_count ? formatNumber(product.bale_count) : 0,
     }), [product]);
 
     const [formData, setFormData] = useState(initialFormState);
@@ -78,12 +77,11 @@ export const CreateUpdateInventoryFormDialog = ({
 
     const handleSubmit = async () => {
         setIsSaving(true);
-        const dataToSave: Omit<InventoryData, 'total' | 'type'> = {
+        const dataToSave: Omit<InventoryData, 'total' | 'type' | 'bale_count'> = {
             id: product ? product.id : formData.id,
             name: formData.name,
             roll_count: parseIndonesianNumber(formData.roll_count) || 0,
             weight_kg: parseIndonesianNumber(formData.weight_kg) || 0,
-            bale_count: parseIndonesianNumber(formData.bale_count) || 0,
         };
 
         await onSave(dataToSave);
@@ -111,15 +109,12 @@ export const CreateUpdateInventoryFormDialog = ({
                     <Label htmlFor="name" className="text-right">Nama barang</Label>
                     <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" spellCheck="false"/>
                 </div>
-                {(typeMessage === 'kain') ? (
+                {(typeMessage === 'kain') && (
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="roll_count" className="text-right">Jumlah Roll</Label>
                         <Input id="roll_count" type="numeric" value={formData.roll_count} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 10" spellCheck="false"/>
                     </div>
-                ):<div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="bale_count" className="text-right">Jumlah Bale</Label>
-                    <Input id="bale_count" type="numeric" value={formData.bale_count} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 5" spellCheck="false"/>
-                </div>}
+                )}
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="weight_kg" className="text-right">Berat (Kg)</Label>
                     <Input id="weight_kg" type="numeric" step="any" value={formData.weight_kg} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 22,5" spellCheck="false"/>

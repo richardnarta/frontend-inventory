@@ -62,7 +62,7 @@ export const InventoryPage = ({ type, typeMessage }: InventoryPageProps) => {
     const totalPages = productsData?.total_pages ?? 1;
 
     const saveMutation = useMutation({
-        mutationFn: async (variables: Omit<InventoryData, 'total' | 'type'> & {create: boolean}) => {
+        mutationFn: async (variables: Omit<InventoryData, 'total' | 'type' | 'bale_count'> & {create: boolean}) => {
             const { create, ...data } = variables;
             if (!create) {
                 return updateInventory(data.id, data);
@@ -99,7 +99,7 @@ export const InventoryPage = ({ type, typeMessage }: InventoryPageProps) => {
         setSearchName('');
     };
 
-    const handleSave = async (data: Omit<InventoryData, 'total' | 'type'>) => {
+    const handleSave = async (data: Omit<InventoryData, 'total' | 'type'  | 'bale_count'>) => {
         const payload = {
             ...data,
             create: editingProduct ? false : true,

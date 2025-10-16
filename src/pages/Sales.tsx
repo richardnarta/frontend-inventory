@@ -128,31 +128,41 @@ export const SalesTransactionPage = () => {
                 return;
             }
 
-            const dataToExport = allTransactionsData.items.map(data => ({
-                "Tanggal Transaksi": formatDate(data.transaction_date),
-                "Nama Pembeli": data.buyer?.name || '-',
-                "Nama Kain": data.inventory?.name || '-',
-                "Jumlah Roll": data.roll_count,
-                "Berat (Kg)": data.weight_kg,
-                "Harga per Kg": data.price_per_kg,
-                "Total": data.total
-            }));
+            let dateRangeString = `(${format(new Date(), 'dd-MM-yyyy')})`;
+            if (dateRange?.from) {
+                const startDate = format(dateRange.from, 'dd-MM-yyyy');
+                if (dateRange.to) {
+                    const endDate = format(dateRange.to, 'dd-MM-yyyy');
+                    dateRangeString = startDate === endDate ? `(${startDate})` : `(${startDate} sampai ${endDate})`;
+                } else {
+                    dateRangeString = `(mulai ${startDate})`;
+                }
+            }
 
-            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const title = `Data Penjualan ${dateRangeString}`;
+            const header = ["Tanggal Transaksi", "Nama Pembeli", "Nama Kain", "Jumlah Roll", "Berat (Kg)", "Harga per Kg", "Total"];
+
+            const dataToExport = allTransactionsData.items.map(data => ([
+                formatDate(data.transaction_date),
+                data.buyer?.name || '-',
+                data.inventory?.name || '-',
+                data.roll_count,
+                data.weight_kg,
+                data.price_per_kg,
+                data.total
+            ]));
+
+            const worksheetData = [[title], [], header, ...dataToExport];
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            
+            worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } }];
+            worksheet['!cols'] = [{ wch: 20 }, { wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }];
+
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Data Penjualan");
-
-            worksheet['!cols'] = [
-                { wch: 20 }, // Tanggal Transaksi
-                { wch: 30 }, // Nama Pembeli
-                { wch: 30 }, // Nama Kain
-                { wch: 15 }, // Jumlah Roll
-                { wch: 15 }, // Berat (Kg)
-                { wch: 20 }, // Harga per Kg
-                { wch: 20 }  // Total
-            ];
-
-            XLSX.writeFile(workbook, `Data_Penjualan_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+            
+            const filename = `Data_Penjualan_${dateRangeString.replace(/[()]/g, '')}.xlsx`;
+            XLSX.writeFile(workbook, filename);
 
             toast.success("Data berhasil diekspor!");
         } catch (err) {

@@ -18,7 +18,7 @@ export const getInventories = async (
     return response.data;
 };
 
-export const createInventory = async (productData: Omit<InventoryData, 'id' | 'total'> & {type: string}) => {
+export const createInventory = async (productData: Omit<InventoryData, 'id' | 'total' | 'bale_count'> & {type: string}) => {
     try {
         const response = await api.post('/v1/inventory', productData);
         return response.data;
@@ -30,7 +30,7 @@ export const createInventory = async (productData: Omit<InventoryData, 'id' | 't
     }
 };
 
-export const updateInventory = async (id: string, productData: Omit<InventoryData, 'id' | 'total' | 'type'>) => {
+export const updateInventory = async (id: string, productData: Omit<InventoryData, 'id' | 'total' | 'type' | 'bale_count'>) => {
     try {
         const response = await api.put(`/v1/inventory/${id}`, productData);
         return response.data;

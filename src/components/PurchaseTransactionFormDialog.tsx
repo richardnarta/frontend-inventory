@@ -39,7 +39,6 @@ export const CreatePurchaseTransactionFormDialog = ({
         transaction_date: new Date(),
         supplier_id: '',
         inventory_id: '',
-        bale_count: '0',
         roll_count: '0',
         weight_kg: '0',
         price_per_kg: '0',
@@ -70,7 +69,6 @@ export const CreatePurchaseTransactionFormDialog = ({
             transaction_date: format(formData.transaction_date, "yyyy-MM-dd"),
             supplier_id: parseInt(formData.supplier_id, 10),
             inventory_id: formData.inventory_id,
-            bale_count: parseIndonesianNumber(formData.bale_count) || 0,
             roll_count: parseIndonesianNumber(formData.roll_count) || 0,
             weight_kg: parseIndonesianNumber(formData.weight_kg) || 0,
             price_per_kg: parseIndonesianNumber(formData.price_per_kg) || 0,
@@ -154,7 +152,7 @@ export const CreatePurchaseTransactionFormDialog = ({
                         />
                     </div>
                 )}
-                {(typeMessage === 'kain') ? (
+                {(typeMessage === 'kain') && (
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="roll_count" className="text-right">Jumlah Rol</Label>
                         <Input 
@@ -165,19 +163,6 @@ export const CreatePurchaseTransactionFormDialog = ({
                             onChange={handleNumberChange} 
                             className="col-span-3" 
                             placeholder="e.g., 50"
-                        />
-                    </div>
-                ):(
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="bale_count" className="text-right">Jumlah Bal</Label>
-                        <Input 
-                            id="bale_count" 
-                            type="text" 
-                            inputMode="decimal" 
-                            value={formData.bale_count} 
-                            onChange={handleNumberChange} 
-                            className="col-span-3" 
-                            placeholder="e.g., 10"
                         />
                     </div>
                 )}
