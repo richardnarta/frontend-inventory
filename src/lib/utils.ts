@@ -74,7 +74,8 @@ api.interceptors.response.use(
     if (
       error.response?.status === 401 && 
       !originalRequest._retry &&
-      originalRequest.url !== '/v1/auth/refresh'
+      originalRequest.url !== '/v1/auth/refresh' &&
+      originalRequest.url !== '/v1/auth/login'
     ) {
       originalRequest._retry = true;
       try {
