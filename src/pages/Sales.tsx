@@ -340,7 +340,7 @@ export const SalesTransactionPage = () => {
                 <CreateUpdateSalesTransactionFormDialog
                     transaction={editingTransaction}
                     onSave={handleSave}
-                    buyers={mapToDropdownItems(buyerData?.items, {valueKey: 'id', labelKey: 'name'})}
+                    buyers={mapToDropdownItems(buyerData?.items, {valueKey: 'id', labelKey: 'name', statusKey: 'is_risked'})}
                     inventories={mapToDropdownItems(inventoryData?.items, {valueKey: 'id', labelKey: 'name'})}
                     isBuyersLoading={isBuyersLoading}
                     isInventoriesLoading={isInventoriesLoading}

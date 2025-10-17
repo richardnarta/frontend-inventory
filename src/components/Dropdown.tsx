@@ -1,18 +1,19 @@
 import React from "react"
-
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandGroup } from "@/components/ui/command"
-
 import { cn } from "@/lib/utils"
+import { ChevronsUpDown, Check, Loader2, AlertTriangle } from "lucide-react"
 
-import { ChevronsUpDown, Check, Loader2 } from "lucide-react"
-
-
+// --- TYPE MODIFICATION ---
+// Menambahkan properti 'status' yang bersifat opsional.
+// Jika 'status' bernilai true, ikon peringatan akan muncul.
 export type DropdownItem = {
     value: string
     label: string
+    status?: boolean // Properti baru untuk menampilkan ikon
 }
+
 
 interface ReusableComboboxProps {
     items: DropdownItem[]
@@ -35,7 +36,7 @@ export function Dropdown({
     emptyMessage = "Item tidak ditemukan.",
     className,
     isLoading = false,
-    disabled = false, // Ambil properti disabled
+    disabled = false,
 }: ReusableComboboxProps) {
     const [open, setOpen] = React.useState(false)
 
@@ -74,16 +75,23 @@ export function Dropdown({
                                 {items.map((item) => (
                                     <CommandItem
                                         key={item.value}
-                                        value={item.label}
+                                        value={item.label} // Command pencarian akan berjalan berdasarkan label
                                         onSelect={() => {
                                             onChange(item.value === value ? "" : item.value)
                                             setOpen(false)
                                         }}
                                     >
-                                        {item.label}
+                                        {/* --- ICON MODIFICATION --- */}
+                                        {/* Jika item.status true, tampilkan ikon AlertTriangle */}
+                                        {item.status && (
+                                            <AlertTriangle className="mr-2 h-4 w-4 text-yellow-500 flex-shrink-0" />
+                                        )}
+                                        {/* Label item */}
+                                        <span className="flex-grow truncate">{item.label}</span>
+                                        {/* Ikon Check di sebelah kanan */}
                                         <Check
                                             className={cn(
-                                                "ml-auto h-4 w-4",
+                                                "ml-auto h-4 w-4 flex-shrink-0",
                                                 value === item.value ? "opacity-100" : "opacity-0"
                                             )}
                                         />
