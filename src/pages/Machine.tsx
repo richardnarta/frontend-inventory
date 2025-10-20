@@ -136,11 +136,11 @@ export const MachinePage = () => {
                     <div>
                         {/* Desktop Table */}
                         <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
-                            <Table>
+                            <Table className="w-full table-auto border-collapse">
                                 <TableHeader>
                                     <TableRow className="bg-blue-200 hover:bg-blue-200">
                                         <TableHead className="pl-6 py-4">ID Mesin</TableHead>
-                                        <TableHead>Nama Mesin</TableHead>
+                                        <TableHead className="max-w-[400px] break-words whitespace-normal">Nama Mesin</TableHead>
                                         <TableHead className="text-center">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -148,7 +148,7 @@ export const MachinePage = () => {
                                     {machines.map((data) => (
                                         <TableRow key={data.id}>
                                             <TableCell className='font-medium pl-6'>{`MACHINE-${data.id}`}</TableCell>
-                                            <TableCell className="font-medium">{data.name}</TableCell>
+                                            <TableCell className="font-medium max-w-[400px] break-words whitespace-normal">{data.name}</TableCell>
                                             <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>

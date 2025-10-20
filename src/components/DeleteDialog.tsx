@@ -35,10 +35,28 @@ export const DeleteConfirmationDialog = ({
                 {children}
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{title}</AlertDialogTitle>
-                    <AlertDialogDescription>{description}</AlertDialogDescription>
-                </AlertDialogHeader>
+                
+                {/* --- PERBAIKAN MULAI DARI SINI --- */}
+                {/* Bungkus Header dengan div ini.
+                  - max-h-[60vh] membatasi tinggi konten (60% dari tinggi layar).
+                  - overflow-y-auto akan menambahkan scrollbar jika kontennya lebih panjang.
+                  - Anda bisa ganti [60vh] dengan nilai lain seperti [400px] atau [500px].
+                */}
+                <div className="max-h-[60vh] overflow-y-auto pr-6"> {/* pr-6 untuk memberi ruang scrollbar */}
+                    <AlertDialogHeader>
+                        {/* Kami juga tambahkan 'break-words' di sini 
+                          untuk menangani teks panjang di judul 
+                        */}
+                        <AlertDialogTitle className="break-words"> 
+                            {title}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="break-words pt-2">
+                            {description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                </div>
+                {/* --- PERBAIKAN SELESAI --- */}
+                
                 <AlertDialogFooter>
                     <AlertDialogCancel>Kembali</AlertDialogCancel>
                     <AlertDialogAction onClick={onConfirm} disabled={isDeleting}>

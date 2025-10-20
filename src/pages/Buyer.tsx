@@ -143,6 +143,7 @@ export const BuyerPage = () => {
                                         <TableHead>Nama Pembeli</TableHead>
                                         <TableHead>No. Telepon</TableHead>
                                         <TableHead className="text-center">Status Piutang</TableHead>
+                                        <TableHead className="max-w-xs">Alamat</TableHead>
                                         <TableHead className="max-w-xs">Catatan</TableHead>
                                         <TableHead className="text-center">Aksi</TableHead>
                                     </TableRow>
@@ -165,6 +166,11 @@ export const BuyerPage = () => {
                                                         <span className="font-medium">Aman</span>
                                                     </div>
                                                 )}
+                                            </TableCell>
+                                            <TableCell className="max-w-xs">
+                                                <div className="break-words whitespace-normal">
+                                                    {data.address || '-'}
+                                                </div>
                                             </TableCell>
                                             <TableCell className="max-w-xs">
                                                 <div className="break-words whitespace-normal">

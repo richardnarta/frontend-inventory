@@ -200,7 +200,7 @@ export const KnitProcessPage = () => {
                                 <TableHead>Nama Kain</TableHead>
                                 <TableHead>Bahan Terpakai</TableHead>
                                 <TableHead>Operator</TableHead>
-                                <TableHead>Mesin</TableHead>
+                                <TableHead className="max-w-[200px]">Mesin</TableHead>
                                 <TableHead className="text-center">Status</TableHead>
                                 <TableHead className="text-right">Berat (Kg)</TableHead>
                                 <TableHead className="text-right">Jumlah Rol</TableHead>
@@ -222,7 +222,11 @@ export const KnitProcessPage = () => {
                                             </ul>
                                         </TableCell>
                                         <TableCell>{data.operator.name}</TableCell>
-                                        <TableCell>{data.machine.name}</TableCell>
+                                        <TableCell className="max-w-[200px]">
+                                            <div className="break-words whitespace-normal">
+                                                {data.machine.name}
+                                            </div>
+                                        </TableCell>
                                         <TableCell className="text-center">
                                             {data.knit_status ? (
                                                 <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-200">Sudah Rajut</Badge>

@@ -53,7 +53,9 @@ export function Dropdown({
                     disabled={isLoading || disabled}
                     className={cn("justify-between w-full", !value ? "font-normal text-muted-foreground" : "", className)}
                 >
-                    {selectedItemLabel}
+                    <span className="truncate">
+                        {selectedItemLabel}
+                    </span>
                     {isLoading ? (
                         <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin" />
                     ) : (

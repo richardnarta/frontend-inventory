@@ -55,8 +55,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">InventoryApp Login</CardTitle>
-          <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
+          <CardTitle className="text-2xl font-bold text-blue-500 dark:text-blue-300">InventoryApp</CardTitle>
+          <CardDescription>Masukkan kredensial anda untuk mengakses dashboard.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
@@ -65,7 +65,6 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <Input
                 id="username"
                 type="text"
-                placeholder="your_username"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
