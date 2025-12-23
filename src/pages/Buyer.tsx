@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, Plus, Pencil, Trash2, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { RotateCcw, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';

@@ -2,7 +2,6 @@ import { api } from "@/lib/utils";
 import axios from "axios";
 import type {
   PurchaseTransactionListResponse,
-  PurchaseTransactionData,
   PurchaseTransactionCreateRequest,
   PurchaseTransactionUpdateRequest,
 } from "@/model/purchase_transaction";

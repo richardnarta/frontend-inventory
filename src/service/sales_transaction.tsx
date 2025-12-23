@@ -2,7 +2,6 @@ import { api } from "@/lib/utils";
 import axios from "axios";
 import type {
   SalesTransactionListResponse,
-  SalesTransactionData,
   SalesTransactionCreateRequest,
   SalesTransactionUpdateRequest,
 } from "@/model/sales_transaction";

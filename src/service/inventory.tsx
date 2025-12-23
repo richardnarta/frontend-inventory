@@ -1,5 +1,4 @@
 import {
-    type InventoryData,
     type InventoryListResponse,
     type InventoryCreateRequest,
     type InventoryUpdateRequest
