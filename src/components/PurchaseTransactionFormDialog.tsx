@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import type { PurchaseTransactionCreatePayload } from '../model/purchase_transaction';
+import type { PurchaseTransactionCreateRequest } from '../model/purchase_transaction';
 import { type DropdownItem, Dropdown } from './Dropdown';
+import { type QuantityUnit } from '../model/inventory';
 
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -12,12 +13,12 @@ import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Loader2 } from 'lucide-react';
-import { capitalize, parseIndonesianNumber } from '../lib/utils';
+import { parseIndonesianNumber } from '../lib/utils';
 
 type CreatePurchaseTransactionFormDialogProps = {
-    typeMessage: string,
-    onSave: (data: PurchaseTransactionCreatePayload) => Promise<void> | void;
+    onSave: (data: PurchaseTransactionCreateRequest) => Promise<void> | void;
     closeDialog: () => void;
     suppliers: DropdownItem[];
     inventories: DropdownItem[];
@@ -26,7 +27,6 @@ type CreatePurchaseTransactionFormDialogProps = {
 };
 
 export const CreatePurchaseTransactionFormDialog = ({
-    typeMessage,
     onSave,
     closeDialog,
     suppliers,
@@ -39,9 +39,9 @@ export const CreatePurchaseTransactionFormDialog = ({
         transaction_date: new Date(),
         supplier_id: '',
         inventory_id: '',
-        roll_count: '0',
-        weight_kg: '0',
-        price_per_kg: '0',
+        quantity: '0',
+        quantity_unit: 'buah' as QuantityUnit,
+        price_per_unit: '0',
     }), []);
 
     const [formData, setFormData] = useState(initialFormState);
@@ -65,26 +65,30 @@ export const CreatePurchaseTransactionFormDialog = ({
 
     const handleSubmit = async () => {
         setIsSaving(true);
-        const dataToSave = {
-            transaction_date: format(formData.transaction_date, "yyyy-MM-dd"),
+        const quantity = parseIndonesianNumber(formData.quantity) || 0;
+        const price_per_unit = parseIndonesianNumber(formData.price_per_unit) || 0;
+
+        const dataToSave: PurchaseTransactionCreateRequest = {
+            transaction_date: format(formData.transaction_date, "yyyy-MM-dd'T'HH:mm:ss"),
             supplier_id: parseInt(formData.supplier_id, 10),
             inventory_id: formData.inventory_id,
-            roll_count: parseIndonesianNumber(formData.roll_count) || 0,
-            weight_kg: parseIndonesianNumber(formData.weight_kg) || 0,
-            price_per_kg: parseIndonesianNumber(formData.price_per_kg) || 0,
+            quantity,
+            quantity_unit: formData.quantity_unit,
+            price_per_unit,
+            total_price: quantity * price_per_unit,
         };
         await onSave(dataToSave);
         closeDialog();
         setIsSaving(false);
     };
 
-    const isFormValid = formData.transaction_date && formData.supplier_id && formData.inventory_id && 
-                        parseIndonesianNumber(formData.price_per_kg) > 0;
+    const isFormValid = formData.transaction_date && formData.supplier_id && formData.inventory_id &&
+        parseIndonesianNumber(formData.price_per_unit) > 0 && parseIndonesianNumber(formData.quantity) > 0;
 
     return (
         <DialogContent className="max-w-2xl">
             <DialogHeader>
-                <DialogTitle>Tambah Transaksi Pembelian {`${capitalize(typeMessage)}`} Baru</DialogTitle>
+                <DialogTitle>Tambah Transaksi Pembelian Baru</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -112,82 +116,71 @@ export const CreatePurchaseTransactionFormDialog = ({
 
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="supplier_id" className="text-right">Nama Supplier</Label>
-                    <Dropdown 
-                        items={suppliers} 
-                        value={formData.supplier_id} 
-                        onChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))} 
-                        placeholder='Pilih supplier' 
+                    <Dropdown
+                        items={suppliers}
+                        value={formData.supplier_id}
+                        onChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))}
+                        placeholder='Pilih supplier'
                         searchPlaceholder='Cari supplier...'
                         emptyMessage='Supplier tidak ditemukan'
-                        isLoading={isSuppliersLoading} 
-                        className="col-span-3" 
+                        isLoading={isSuppliersLoading}
+                        className="col-span-3"
                     />
                 </div>
-                {(typeMessage === 'kain') ? (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="inventory_id" className="text-right">Nama Kain</Label>
-                        <Dropdown 
-                            items={inventories} 
-                            value={formData.inventory_id} 
-                            onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))} 
-                            placeholder='Pilih kain' 
-                            searchPlaceholder='Cari kain...'
-                            emptyMessage='Kain tidak ditemukan'
-                            isLoading={isInventoriesLoading} 
-                            className="col-span-3" 
-                        />
-                    </div>
-                ):(
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="inventory_id" className="text-right">Nama Benang</Label>
-                        <Dropdown 
-                            items={inventories} 
-                            value={formData.inventory_id} 
-                            onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))} 
-                            placeholder='Pilih benang' 
-                            searchPlaceholder='Cari benang...'
-                            emptyMessage='Benang tidak ditemukan'
-                            isLoading={isInventoriesLoading} 
-                            className="col-span-3" 
-                        />
-                    </div>
-                )}
-                {(typeMessage === 'kain') && (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="roll_count" className="text-right">Jumlah Rol</Label>
-                        <Input 
-                            id="roll_count" 
-                            type="text" 
-                            inputMode="decimal" 
-                            value={formData.roll_count} 
-                            onChange={handleNumberChange} 
-                            className="col-span-3" 
-                            placeholder="e.g., 50"
-                        />
-                    </div>
-                )}
+
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="weight_kg" className="text-right">Berat (Kg)</Label>
-                    <Input 
-                        id="weight_kg" 
-                        type="text" 
-                        inputMode="decimal" 
-                        value={formData.weight_kg} 
-                        onChange={handleNumberChange} 
-                        className="col-span-3" 
-                        placeholder="e.g., 1.000"
+                    <Label htmlFor="inventory_id" className="text-right">Nama Barang</Label>
+                    <Dropdown
+                        items={inventories}
+                        value={formData.inventory_id}
+                        onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))}
+                        placeholder='Pilih barang'
+                        searchPlaceholder='Cari barang...'
+                        emptyMessage='Barang tidak ditemukan'
+                        isLoading={isInventoriesLoading}
+                        className="col-span-3"
                     />
                 </div>
+
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="price_per_kg" className="text-right">Harga per Kg</Label>
-                    <Input 
-                        id="price_per_kg" 
-                        type="text" 
-                        inputMode="decimal" 
-                        value={formData.price_per_kg} 
-                        onChange={handleNumberChange} 
-                        className="col-span-3" 
-                        placeholder="e.g., 50.000"
+                    <Label htmlFor="quantity" className="text-right">Jumlah</Label>
+                    <Input
+                        id="quantity"
+                        type="text"
+                        inputMode="decimal"
+                        value={formData.quantity}
+                        onChange={handleNumberChange}
+                        className="col-span-3"
+                        placeholder="e.g., 100"
+                    />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="quantity_unit" className="text-right">Satuan</Label>
+                    <Select value={formData.quantity_unit} onValueChange={(value) => setFormData(prev => ({ ...prev, quantity_unit: value as QuantityUnit }))}>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Pilih satuan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="buah">Buah</SelectItem>
+                            <SelectItem value="lusin">Lusin</SelectItem>
+                            <SelectItem value="kodi">Kodi</SelectItem>
+                            <SelectItem value="dus">Dus</SelectItem>
+                            <SelectItem value="bal">Bal</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="price_per_unit" className="text-right">Harga per Unit</Label>
+                    <Input
+                        id="price_per_unit"
+                        type="text"
+                        inputMode="decimal"
+                        value={formData.price_per_unit}
+                        onChange={handleNumberChange}
+                        className="col-span-3"
+                        placeholder="e.g., 5.000"
                     />
                 </div>
             </div>

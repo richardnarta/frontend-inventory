@@ -1,35 +1,39 @@
-// model/purchase_transaction.ts
-import { type BaseListResponse, type BaseSingleResponse } from "./common";
+import { type BaseListResponse } from "./common";
 import { type SupplierData } from "./supplier";
-import { type InventoryData } from "./inventory";
+import { type InventoryData, type QuantityUnit } from "./inventory";
 
 export interface PurchaseTransactionData {
   id: number;
-  transaction_date: string; // ISO date-time string
-  supplier: SupplierData | null;
-  inventory: InventoryData | null;
-  bale_count: number;
-  roll_count: number;
-  weight_kg: number;
-  price_per_kg: number;
-  total: number;
+  transaction_date: string;
+  supplier_id: number | null;
+  inventory_id: string;  // References kode_barang
+  quantity: number;
+  quantity_unit: QuantityUnit;
+  price_per_unit: number;
+  total_price: number;
+  supplier?: SupplierData;
+  inventory?: InventoryData;
 }
 
 export interface PurchaseTransactionListResponse extends BaseListResponse {
   items: PurchaseTransactionData[];
 }
 
-export interface SinglePurchaseTransactionResponse extends BaseSingleResponse {
-  data: PurchaseTransactionData;
+export interface PurchaseTransactionCreateRequest {
+  supplier_id?: number | null;
+  inventory_id: string;
+  transaction_date: string;
+  quantity: number;
+  quantity_unit: QuantityUnit;
+  price_per_unit: number;
+  total_price?: number;  // Auto-calculated if not provided
 }
 
-export type PurchaseTransactionCreatePayload = {
-  transaction_date: string;
-  supplier_id: number;
-  inventory_id: string;
-  roll_count?: number;
-  weight_kg?: number;
-  price_per_kg: number;
-};
-
-export type PurchaseTransactionUpdatePayload = Partial<PurchaseTransactionCreatePayload>;
+export interface PurchaseTransactionUpdateRequest {
+  supplier_id?: number | null;
+  inventory_id?: string;
+  quantity?: number;
+  quantity_unit?: QuantityUnit;
+  price_per_unit?: number;
+  total_price?: number;
+}

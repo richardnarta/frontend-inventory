@@ -1,33 +1,39 @@
-import { type BaseListResponse, type BaseSingleResponse } from "./common";
+import { type BaseListResponse } from "./common";
 import { type BuyerData } from "./buyer";
-import { type InventoryData } from "./inventory";
+import { type InventoryData, type QuantityUnit } from "./inventory";
 
 export interface SalesTransactionData {
   id: number;
-  transaction_date: string; // ISO date-time string
-  buyer: BuyerData | null;
-  inventory: InventoryData | null;
-  roll_count: number;
-  weight_kg: number;
-  price_per_kg: number;
-  total: number;
+  transaction_date: string;
+  buyer_id: number | null;
+  inventory_id: string;  // References kode_barang
+  quantity: number;
+  quantity_unit: QuantityUnit;
+  price_per_unit: number;
+  total_price: number;
+  buyer?: BuyerData;
+  inventory?: InventoryData;
 }
 
 export interface SalesTransactionListResponse extends BaseListResponse {
   items: SalesTransactionData[];
 }
 
-export interface SingleSalesTransactionResponse extends BaseSingleResponse {
-    data: SalesTransactionData;
-}
-
-export type SalesTransactionCreatePayload = {
-  buyer_id: number;
+export interface SalesTransactionCreateRequest {
+  buyer_id?: number | null;
   inventory_id: string;
   transaction_date: string;
-  price_per_kg: number;
-  roll_count?: number;
-  weight_kg?: number;
-};
+  quantity: number;
+  quantity_unit: QuantityUnit;
+  price_per_unit: number;
+  total_price?: number;  // Auto-calculated if not provided
+}
 
-export type SalesTransactionUpdatePayload = Partial<SalesTransactionCreatePayload>;
+export interface SalesTransactionUpdateRequest {
+  buyer_id?: number | null;
+  inventory_id?: string;
+  quantity?: number;
+  quantity_unit?: QuantityUnit;
+  price_per_unit?: number;
+  total_price?: number;
+}

@@ -1,4 +1,3 @@
-// pages/PurchaseTransactionPage.tsx
 import { useState } from 'react';
 import { RotateCcw, Plus, Trash2, Loader2, Calendar as CalendarIcon, FileDown } from 'lucide-react';
 import { format } from "date-fns";
@@ -25,21 +24,15 @@ import { Dropdown } from '@/components/Dropdown';
 import { getSuppliers } from '@/service/supplier';
 import { getInventories } from '@/service/inventory';
 import { createPurchaseTransaction, deletePurchaseTransactionById, getPurchaseTransactions } from '@/service/purchase_transaction';
-import type { PurchaseTransactionCreatePayload } from '@/model/purchase_transaction';
+import type { PurchaseTransactionCreateRequest } from '@/model/purchase_transaction';
 import { mapToDropdownItems } from '@/lib/mapper';
-import { capitalize, cn, formatCurrency, formatDate, formatNumber } from '@/lib/utils';
+import { cn, formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 
-interface PurchasePageProps {
-  type: string;
-  typeMessage: string;
-}
-
-
-export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps) => {
+export const PurchaseTransactionPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    
+
     // Filter states
     const [supplierId, setSupplierId] = useState('');
     const [inventoryId, setInventoryId] = useState('');
@@ -47,19 +40,18 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
 
     const itemsPerPage = 10;
     const queryClient = useQueryClient();
-    
+
     const formattedDateRange = {
         start_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
         end_date: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
     };
 
     const { data: transactionData, isLoading, error } = useQuery({
-        queryKey: ['purchase-transactions', { supplierId, inventoryId, ...formattedDateRange, currentPage, type: type }],
-        queryFn: () => getPurchaseTransactions({ 
-            supplier_id: supplierId ? parseInt(supplierId) : undefined, 
+        queryKey: ['purchase-transactions', { supplierId, inventoryId, ...formattedDateRange, currentPage }],
+        queryFn: () => getPurchaseTransactions({
+            supplier_id: supplierId ? parseInt(supplierId) : undefined,
             inventory_id: inventoryId || undefined,
-            type: type,
-            ...formattedDateRange 
+            ...formattedDateRange
         }, currentPage, itemsPerPage),
         placeholderData: keepPreviousData,
     });
@@ -71,7 +63,7 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
 
     const { data: inventoryData, isLoading: isInventoriesLoading } = useQuery({
         queryKey: ['inventories-all'],
-        queryFn: () => getInventories({ type: type }, 1, 9999),
+        queryFn: () => getInventories({}, 1, 9999),
     });
 
     const createMutation = useMutation({
@@ -94,12 +86,12 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
         onError: (error) => { toast.error(error.message); },
     });
 
-    const handleSave = async (data: PurchaseTransactionCreatePayload) => {
+    const handleSave = async (data: PurchaseTransactionCreateRequest) => {
         createMutation.mutate(data);
     };
-    
+
     const handleDelete = (id: number) => deleteMutation.mutate(id);
-    
+
     const handleReset = () => {
         setSupplierId('');
         setInventoryId('');
@@ -126,13 +118,11 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
         setIsExporting(true);
         toast.info("Mengekspor data... Ini mungkin memakan waktu beberapa saat.");
         try {
-            // Fetch all transactions with the current filters by setting a high limit.
             const allTransactionsData = await getPurchaseTransactions({
                 supplier_id: supplierId ? parseInt(supplierId) : undefined,
                 inventory_id: inventoryId || undefined,
-                type: type,
                 ...formattedDateRange
-            }, 1, 99999); 
+            }, 1, 99999);
 
             if (!allTransactionsData || allTransactionsData.items.length === 0) {
                 toast.warning("Tidak ada data untuk diekspor.");
@@ -150,48 +140,45 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
                 }
             }
 
-            // Create header row with title
-            const title = `Data Pembelian ${capitalize(typeMessage)} ${dateRangeString}`;
+            const title = `Data Pembelian ${dateRangeString}`;
 
-            // Map the fetched data to a more readable format for the Excel sheet.
             const header = [
                 "Tanggal Transaksi",
                 "Nama Supplier",
-                type === 'fabric' ? "Nama Kain" : "Nama Benang",
-                type === 'fabric' ? "Jumlah Roll" : "Jumlah Bale",
-                "Berat (Kg)",
-                "Harga per Kg",
+                "Nama Barang",
+                "Jumlah",
+                "Satuan",
+                "Harga per Unit",
                 "Total"
             ];
 
             const dataToExport = allTransactionsData.items.map(data => ([
                 formatDate(data.transaction_date),
                 data.supplier?.name || '-',
-                data.inventory?.name || '-',
-                type === 'fabric' ? data.roll_count : data.bale_count,
-                data.weight_kg,
-                data.price_per_kg,
-                data.total
+                data.inventory?.nama_barang || '-',
+                data.quantity,
+                data.quantity_unit.toUpperCase(),
+                data.price_per_unit,
+                data.total_price
             ]));
 
-            // Create a new worksheet and a new workbook.
             const worksheetData = [
-                [title], // Title row
-                [],      // Empty row for spacing
-                header,  // Header row
+                [title],
+                [],
+                header,
                 ...dataToExport
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
             worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } }];
-            
+
             worksheet['!cols'] = [
                 { wch: 20 }, { wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }
             ];
 
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Data Pembelian");
-            
-            const filename = `Data_Pembelian_${capitalize(typeMessage)}_${dateRangeString}.xlsx`;
+
+            const filename = `Data_Pembelian_${dateRangeString}.xlsx`;
             XLSX.writeFile(workbook, filename);
 
             toast.success("Data berhasil diekspor!");
@@ -205,42 +192,29 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
 
     return (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <PageHeading headingTitle={`Data Pembelian ${capitalize(typeMessage)}`} actionButtonTitle={isExporting ? "Dalam proses..." : "Ekspor data pembelian"} actionButtonIcon={isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileDown className="mr-2 h-4 w-4"/>} actionButton={handleExport} />
+            <PageHeading headingTitle="Data Pembelian" actionButtonTitle={isExporting ? "Dalam proses..." : "Ekspor data pembelian"} actionButtonIcon={isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} actionButton={handleExport} />
             <div className="bg-white dark:bg-gray-950 border p-4 rounded-xl shadow-sm mb-6">
                 <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                     <div>
                         <Label htmlFor="supplierFilter" className="block mb-2">Nama Supplier</Label>
-                        <Dropdown 
-                            items={mapToDropdownItems(supplierData?.items, {valueKey: 'id', labelKey: 'name'})} 
-                            value={supplierId} 
-                            onChange={setSupplierId} 
-                            placeholder='Pilih Supplier' 
+                        <Dropdown
+                            items={mapToDropdownItems(supplierData?.items, { valueKey: 'id', labelKey: 'name' })}
+                            value={supplierId}
+                            onChange={setSupplierId}
+                            placeholder='Pilih Supplier'
                             isLoading={isSuppliersLoading}
                         />
                     </div>
-                    {(type === 'fabric') ? (
-                        <div>
-                            <Label htmlFor="inventoryFilter" className="block mb-2">Nama Kain</Label>
-                            <Dropdown 
-                                items={mapToDropdownItems(inventoryData?.items, {valueKey: 'id', labelKey: 'name'})} 
-                                value={inventoryId} 
-                                onChange={setInventoryId} 
-                                placeholder='Pilih Kain' 
-                                isLoading={isInventoriesLoading}
-                            />
-                        </div>
-                    ):
-                        <div>
-                            <Label htmlFor="inventoryFilter" className="block mb-2">Nama Benang</Label>
-                            <Dropdown 
-                                items={mapToDropdownItems(inventoryData?.items, {valueKey: 'id', labelKey: 'name'})} 
-                                value={inventoryId} 
-                                onChange={setInventoryId} 
-                                placeholder='Pilih Benang' 
-                                isLoading={isInventoriesLoading}
-                            />
-                        </div>
-                    }
+                    <div>
+                        <Label htmlFor="inventoryFilter" className="block mb-2">Nama Barang</Label>
+                        <Dropdown
+                            items={mapToDropdownItems(inventoryData?.items, { valueKey: 'kode_barang', labelKey: 'nama_barang' })}
+                            value={inventoryId}
+                            onChange={setInventoryId}
+                            placeholder='Pilih Barang'
+                            isLoading={isInventoriesLoading}
+                        />
+                    </div>
                     <div>
                         <Label htmlFor="dateRangeFilter" className="block mb-2">Rentang Tanggal</Label>
                         <Popover>
@@ -280,8 +254,8 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
                         <Button variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" />Reset Filter
                         </Button>
-                        <Button className="bg-blue-500 hover:bg-blue-600" onClick={openAddDialog}>
-                            <Plus className="mr-2 h-4 w-4" />Tambah Data Pembelian
+                        <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
+                            <Plus className="mr-2 h-4 w-4" />Tambah Pembelian
                         </Button>
                     </div>
                 </div>
@@ -298,7 +272,7 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
             ) : (
                 !transactions.length ? (
                     <div className="text-center p-8 text-gray-500 bg-gray-50 border rounded-xl shadow-sm">
-                        Data transaksi pembelian {typeMessage} kosong.
+                        Data transaksi pembelian kosong.
                     </div>
                 ) : (
                     <div>
@@ -306,18 +280,13 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
                         <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-blue-200 hover:bg-blue-200">
-                                        <TableHead className="pl-6 py-4">Tanggal Transaksi</TableHead>
-                                        <TableHead>Nama Supplier</TableHead>
-                                        {(type === 'fabric') ? (
-                                            <TableHead>Nama Kain</TableHead>
-                                        ):<TableHead>Nama Benang</TableHead>}
-                                        
-                                        {(type === 'fabric') ? (
-                                            <TableHead className="text-right">Jumlah Roll</TableHead>
-                                        ):<TableHead className="text-right">Jumlah Bale</TableHead>}
-                                        <TableHead className="text-right">Berat (Kg)</TableHead>
-                                        <TableHead className="text-right">Harga per Kg</TableHead>
+                                    <TableRow className="bg-green-200 hover:bg-green-200">
+                                        <TableHead className="pl-6 py-4">Tanggal</TableHead>
+                                        <TableHead>Supplier</TableHead>
+                                        <TableHead>Barang</TableHead>
+                                        <TableHead className="text-right">Jumlah</TableHead>
+                                        <TableHead className="text-center">Satuan</TableHead>
+                                        <TableHead className="text-right">Harga/Unit</TableHead>
                                         <TableHead className="text-right">Total</TableHead>
                                         <TableHead className="text-center">Aksi</TableHead>
                                     </TableRow>
@@ -327,17 +296,15 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
                                         <TableRow key={data.id}>
                                             <TableCell className='pl-6'>{formatDate(data.transaction_date)}</TableCell>
                                             <TableCell>{data.supplier?.name || '-'}</TableCell>
-                                            <TableCell>{data.inventory?.name || '-'}</TableCell>
-                                            {(type === 'fabric') ? (
-                                                <TableCell className="text-right">{formatNumber(data.roll_count)}</TableCell>
-                                            ):<TableCell className="text-right">{formatNumber(data.bale_count)}</TableCell>}
-                                            <TableCell className="text-right">{formatNumber(data.weight_kg)}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(data.price_per_kg)}</TableCell>
-                                            <TableCell className="text-right font-semibold">{formatCurrency(data.total)}</TableCell>
+                                            <TableCell>{data.inventory?.nama_barang || '-'}</TableCell>
+                                            <TableCell className="text-right">{formatNumber(data.quantity)}</TableCell>
+                                            <TableCell className="text-center uppercase">{data.quantity_unit}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(data.price_per_unit)}</TableCell>
+                                            <TableCell className="text-right font-semibold">{formatCurrency(data.total_price)}</TableCell>
                                             <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <DeleteConfirmationDialog 
-                                                        onConfirm={() => handleDelete(data.id)} 
+                                                    <DeleteConfirmationDialog
+                                                        onConfirm={() => handleDelete(data.id)}
                                                         title={`Hapus transaksi pembelian dari "${data.supplier?.name}"?`}
                                                     >
                                                         <Button variant="destructive" size="icon">
@@ -355,9 +322,9 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
                                             Total Pembelian
                                         </TableCell>
                                         <TableCell className="text-right font-bold">
-                                            {formatCurrency(transactions.reduce((sum, r) => sum + r.total, 0))}
+                                            {formatCurrency(transactions.reduce((sum, r) => sum + r.total_price, 0))}
                                         </TableCell>
-                                        <TableCell/>
+                                        <TableCell />
                                     </TableRow>
                                 </TableFooter>
                             </Table>
@@ -377,35 +344,24 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
                                     </CardHeader>
                                     <CardContent className="space-y-2 text-sm">
                                         <div className="font-semibold col-span-2 pb-2 border-b">
-                                            {data.inventory?.name || '-'}
-                                        </div>
-                                        {type === 'fabric' ? (
-                                            <div className="grid grid-cols-2 gap-x-4">
-                                                <div className="font-semibold text-gray-500">Bal</div>
-                                                <div className="text-right">{formatNumber(data.bale_count)}</div>
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-2 gap-x-4">
-                                                <div className="font-semibold text-gray-500">Roll</div>
-                                                <div className="text-right">{formatNumber(data.roll_count)}</div>
-                                            </div>
-                                        )}
-                                        <div className="grid grid-cols-2 gap-x-4">
-                                            <div className="font-semibold text-gray-500">Berat (Kg)</div>
-                                            <div className="text-right">{formatNumber(data.weight_kg)}</div>
+                                            {data.inventory?.nama_barang || '-'}
                                         </div>
                                         <div className="grid grid-cols-2 gap-x-4">
-                                            <div className="font-semibold text-gray-500">Harga per Kg</div>
-                                            <div className="text-right">{formatCurrency(data.price_per_kg)}</div>
+                                            <div className="font-semibold text-gray-500">Jumlah</div>
+                                            <div className="text-right">{formatNumber(data.quantity)} {data.quantity_unit}</div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-4">
+                                            <div className="font-semibold text-gray-500">Harga per Unit</div>
+                                            <div className="text-right">{formatCurrency(data.price_per_unit)}</div>
                                         </div>
                                         <div className="col-span-2 border-t mt-2 pt-2 grid grid-cols-2">
                                             <div className="font-bold">Total</div>
-                                            <div className="text-right font-bold">{formatCurrency(data.total)}</div>
+                                            <div className="text-right font-bold">{formatCurrency(data.total_price)}</div>
                                         </div>
                                     </CardContent>
                                     <CardFooter className="flex justify-end gap-2">
-                                        <DeleteConfirmationDialog 
-                                            onConfirm={() => handleDelete(data.id)} 
+                                        <DeleteConfirmationDialog
+                                            onConfirm={() => handleDelete(data.id)}
                                             title={`Hapus transaksi pembelian dari "${data.supplier?.name}"?`}
                                         >
                                             <Button variant="destructive" size="icon">
@@ -417,22 +373,21 @@ export const PurchaseTransactionPage = ({ type, typeMessage }: PurchasePageProps
                             ))}
                         </div>
 
-                        <Pagination 
-                            currentPage={currentPage} 
-                            totalPages={totalPages} 
-                            onPageChange={setCurrentPage} 
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
                             className='mt-6'
                         />
                     </div>
                 )
             )}
-            
+
             {isFormOpen && (
                 <CreatePurchaseTransactionFormDialog
-                    typeMessage={typeMessage}
                     onSave={handleSave}
-                    suppliers={mapToDropdownItems(supplierData?.items, {valueKey: 'id', labelKey: 'name'})}
-                    inventories={mapToDropdownItems(inventoryData?.items, {valueKey: 'id', labelKey: 'name'})}
+                    suppliers={mapToDropdownItems(supplierData?.items, { valueKey: 'id', labelKey: 'name' })}
+                    inventories={mapToDropdownItems(inventoryData?.items, { valueKey: 'kode_barang', labelKey: 'nama_barang' })}
                     isSuppliersLoading={isSuppliersLoading}
                     isInventoriesLoading={isInventoriesLoading}
                     closeDialog={closeDialog}

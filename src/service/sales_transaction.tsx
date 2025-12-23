@@ -2,17 +2,16 @@ import { api } from "@/lib/utils";
 import axios from "axios";
 import type {
   SalesTransactionListResponse,
-  SingleSalesTransactionResponse,
-  SalesTransactionCreatePayload,
-  SalesTransactionUpdatePayload,
+  SalesTransactionData,
+  SalesTransactionCreateRequest,
+  SalesTransactionUpdateRequest,
 } from "@/model/sales_transaction";
 
-
 export type SalesTransactionFilters = {
-    buyer_id?: number | null;
-    inventory_id?: string | null;
-    start_date?: string | null;
-    end_date?: string | null;
+  buyer_id?: number | null;
+  inventory_id?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
 };
 
 export const getSalesTransactions = async (
@@ -30,25 +29,25 @@ export const getSalesTransactions = async (
   return response.data;
 };
 
-export const createSalesTransaction = async (transactionData: SalesTransactionCreatePayload): Promise<SingleSalesTransactionResponse> => {
+export const createSalesTransaction = async (transactionData: SalesTransactionCreateRequest) => {
   try {
     const response = await api.post('/v1/sales-transaction', transactionData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.message || 'Gagal menambah data transaksi penjualan baru.');
+      throw new Error(error.response.data.detail || 'Gagal menambah data transaksi penjualan baru.');
     }
     throw new Error('Gagal menambah data transaksi penjualan baru.');
   }
 };
 
-export const updateSalesTransaction = async (id: number, transactionData: SalesTransactionUpdatePayload): Promise<SingleSalesTransactionResponse> => {
+export const updateSalesTransaction = async (id: number, transactionData: SalesTransactionUpdateRequest) => {
   try {
     const response = await api.put(`/v1/sales-transaction/${id}`, transactionData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.message || 'Gagal merubah data transaksi penjualan.');
+      throw new Error(error.response.data.detail || 'Gagal merubah data transaksi penjualan.');
     }
     throw new Error('Gagal merubah data transaksi penjualan.');
   }
@@ -60,7 +59,7 @@ export const deleteSalesTransactionById = async (id: number) => {
     return { message: 'Sales transaction deleted successfully' };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.message || 'Gagal menghapus data transaksi penjualan.');
+      throw new Error(error.response.data.detail || 'Gagal menghapus data transaksi penjualan.');
     }
     throw new Error('Gagal menghapus data transaksi penjualan.');
   }

@@ -1,9 +1,14 @@
-import { type InventoryData, type InventoryListResponse } from "../model/inventory";
+import {
+    type InventoryData,
+    type InventoryListResponse,
+    type InventoryCreateRequest,
+    type InventoryUpdateRequest
+} from "../model/inventory";
 import { api } from "../lib/utils";
 import axios from "axios";
 
 export const getInventories = async (
-    filters: { name?: string, id?: string, type?: string },
+    filters: { nama_barang?: string, kode_barang?: string, quantity_unit?: string },
     page: number = 1,
     limit: number = 10
 ): Promise<InventoryListResponse> => {
@@ -14,41 +19,40 @@ export const getInventories = async (
     };
 
     const response = await api.get('/v1/inventory', { params });
-
     return response.data;
 };
 
-export const createInventory = async (productData: Omit<InventoryData, 'id' | 'total' | 'bale_count'> & {type: string}) => {
+export const createInventory = async (productData: InventoryCreateRequest) => {
     try {
         const response = await api.post('/v1/inventory', productData);
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
-            throw new Error(error.response.data.detail || 'Failed to create product');
+            throw new Error(error.response.data.detail || 'Failed to create inventory item');
         }
         throw new Error('An unexpected error occurred');
     }
 };
 
-export const updateInventory = async (id: string, productData: Omit<InventoryData, 'id' | 'total' | 'type' | 'bale_count'>) => {
+export const updateInventory = async (kode_barang: string, productData: InventoryUpdateRequest) => {
     try {
-        const response = await api.put(`/v1/inventory/${id}`, productData);
+        const response = await api.put(`/v1/inventory/${kode_barang}`, productData);
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
-            throw new Error(error.response.data.detail || 'Failed to update product');
+            throw new Error(error.response.data.detail || 'Failed to update inventory item');
         }
         throw new Error('An unexpected error occurred');
     }
 };
 
-export const deleteInventoryById = async (id: string) => {
+export const deleteInventoryById = async (kode_barang: string) => {
     try {
-        await api.delete(`/v1/inventory/${id}`);
-        return { message: 'Product deleted successfully' };
+        await api.delete(`/v1/inventory/${kode_barang}`);
+        return { message: 'Inventory item deleted successfully' };
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
-            throw new Error(error.response.data.detail || 'Failed to delete product');
+            throw new Error(error.response.data.detail || 'Failed to delete inventory item');
         }
         throw new Error('An unexpected error occurred');
     }

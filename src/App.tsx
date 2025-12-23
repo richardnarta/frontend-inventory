@@ -1,20 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import {
-  CreditCard,
-  Scissors,
-  Droplets,
   Tag,
-  Cog,
   ShoppingCart,
-  ShoppingBasket,
-  Spool,
-  Layers,
   HandCoins,
   Package,
-  UserRoundPen,
   LogOut,
   Loader2,
+  LayoutList,
 } from "lucide-react";
 import {
   Button,
@@ -45,16 +38,10 @@ import {
 import { toast } from "sonner";
 
 import { InventoryPage } from "@/pages/Inventory";
-import { AccountReceivablePage } from "@/pages/AccountReceivable";
 import { BuyerPage } from "@/pages/Buyer";
 import { SalesTransactionPage } from "@/pages/Sales";
 import { SupplierPage } from "@/pages/Supplier";
 import { PurchaseTransactionPage } from "@/pages/Purchase";
-import { DyeingProcessPage } from "@/pages/Dyeing";
-import { MachinePage } from "@/pages/Machine";
-import { KnitFormulaPage } from "@/pages/KnitFormula";
-import { KnitProcessPage } from "@/pages/KnitProcess";
-import { OperatorPage } from "@/pages/Operator";
 import { LoginPage } from "@/pages/Login";
 import { getProfile, logout } from "@/service/auth";
 
@@ -63,34 +50,22 @@ import { getProfile, logout } from "@/service/auth";
 // -------------------------------
 const navGroup = [
   {
-    name: "Stok Barang",
+    name: "Inventory",
     items: [
-      { name: "Stok Benang", icon: <Spool className="h-5 w-5" />, path: "/benang" },
-      { name: "Stok Kain", icon: <Layers className="h-5 w-5" />, path: "/kain" },
-    ],
-  },
-  {
-    name: "Produksi Pabrik",
-    items: [
-      { name: "Menu Rajut", icon: <Scissors className="h-5 w-5" />, path: "/rajut" },
-      { name: "Menu Celup", icon: <Droplets className="h-5 w-5" />, path: "/celup" },
+      { name: "Data Barang", icon: <LayoutList className="h-5 w-5" />, path: "/inventory" },
     ],
   },
   {
     name: "Transaksi",
     items: [
-      { name: "Menu Pembelian Benang", icon: <ShoppingCart className="h-5 w-5" />, path: "/pembelian-benang" },
-      { name: "Menu Pembelian Kain", icon: <ShoppingBasket className="h-5 w-5" />, path: "/pembelian-kain" },
-      { name: "Menu Penjualan", icon: <Tag className="h-5 w-5" />, path: "/penjualan" },
-      { name: "Menu Piutang", icon: <CreditCard className="h-5 w-5" />, path: "/piutang" },
+      { name: "Pembelian", icon: <ShoppingCart className="h-5 w-5" />, path: "/purchase" },
+      { name: "Penjualan", icon: <Tag className="h-5 w-5" />, path: "/sales" },
     ],
   },
   {
-    name: "Manajemen Pabrik",
+    name: "Master Data",
     items: [
-      { name: "Data Mesin", icon: <Cog className="h-5 w-5" />, path: "/mesin" },
-      { name: "Data Operator", icon: <UserRoundPen className="h-5 w-5" />, path: "/operator" },
-      { name: "Data Pembeli", icon: <HandCoins className="h-5 w-5" />, path: "/pembeli" },
+      { name: "Data Pembeli", icon: <HandCoins className="h-5 w-5" />, path: "/buyer" },
       { name: "Data Supplier", icon: <Package className="h-5 w-5" />, path: "/supplier" },
     ],
   },
@@ -126,11 +101,11 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
             <SidebarHeader className="px-4 pt-4 pb-2 text-left">
               <h1
                 className={cn(
-                  "font-bold text-blue-500 dark:text-blue-300",
+                  "font-bold text-green-600 dark:text-green-400",
                   !open && !isMobile ? "text-xl" : "text-2xl"
                 )}
               >
-                {!open && !isMobile ? "IA" : "InventoryApp"}
+                {!open && !isMobile ? "HB" : "HidupBaru"}
               </h1>
             </SidebarHeader>
 
@@ -153,7 +128,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
                               "w-full gap-2",
                               open ? "justify-start" : "justify-center",
                               isActive &&
-                                "bg-blue-200 text-dark hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-50 dark:hover:bg-blue-900"
+                              "bg-green-200 text-dark hover:bg-green-300 dark:bg-green-800 dark:text-green-50 dark:hover:bg-green-900"
                             )
                           }
                         >
@@ -187,22 +162,13 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
 
       <main className="p-6 w-full overflow-auto">
         <Routes>
-          <Route path="/benang" element={<InventoryPage key="thread-page" type="thread" typeMessage="benang" />} />
-          <Route path="/kain" element={<InventoryPage key="fabric-page" type="fabric" typeMessage="kain" />} />
-          <Route path="/rajut" element={<KnitProcessPage />} />
-          <Route path="/rajut/formula" element={<KnitFormulaPage />} />
-          <Route path="/celup" element={<DyeingProcessPage />} />
-          <Route path="/pembelian-benang" element={<PurchaseTransactionPage key="thread-purchase-page" type="thread" typeMessage="benang" />} />
-          <Route path="/pembelian-kain" element={<PurchaseTransactionPage key="fabric-purchase-page" type="fabric" typeMessage="kain" />} />
-          <Route path="/penjualan" element={<SalesTransactionPage />} />
-          <Route path="/piutang" element={<AccountReceivablePage />} />
-          <Route path="/mesin" element={<MachinePage />} />
-          <Route path="/operator" element={<OperatorPage />} />
-          <Route path="/pembeli" element={<BuyerPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/purchase" element={<PurchaseTransactionPage />} />
+          <Route path="/sales" element={<SalesTransactionPage />} />
+          <Route path="/buyer" element={<BuyerPage />} />
           <Route path="/supplier" element={<SupplierPage />} />
-          {/* PERUBAHAN 1: Rute default untuk pengguna yang sudah login */}
-          <Route path="/" element={<Navigate to="/benang" replace />} />
-          <Route path="/login" element={<Navigate to="/benang" replace />} />
+          <Route path="/" element={<Navigate to="/inventory" replace />} />
+          <Route path="/login" element={<Navigate to="/inventory" replace />} />
         </Routes>
       </main>
 
@@ -222,11 +188,9 @@ function AppContent() {
   const authCheckRef = useRef(false);
 
   useEffect(() => {
-    // 3. Hanya jalankan jika ref bernilai false
     if (authCheckRef.current) {
       return;
     }
-    // 4. Set ref menjadi true untuk mencegah eksekusi berikutnya
     authCheckRef.current = true;
 
     const checkAuth = async () => {
@@ -244,11 +208,10 @@ function AppContent() {
     };
     checkAuth();
   }, [navigate]);
-  
+
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
-    // PERUBAHAN 2: Navigasi ke halaman default setelah login berhasil
-    navigate('/benang', { replace: true });
+    navigate('/inventory', { replace: true });
   };
 
 
@@ -260,7 +223,6 @@ function AppContent() {
     );
   }
 
-  // Gunakan <Routes> untuk mengelola tampilan login vs layout utama
   return (
     <Routes>
       {!isAuthenticated ? (
@@ -272,8 +234,7 @@ function AppContent() {
           </SidebarProvider>
         } />
       )}
-      {/* Pengalihan default */}
-      <Route path="*" element={<Navigate to={isAuthenticated ? "/benang" : "/login"} replace />} />
+      <Route path="*" element={<Navigate to={isAuthenticated ? "/inventory" : "/login"} replace />} />
     </Routes>
   );
 }

@@ -28,7 +28,7 @@ export const PageHeading = ({
             {actionButtonTitle && actionButton && (
                 <Button
                     onClick={actionButton}
-                    className="flex items-center gap-4 bg-blue-500 font-semibold hover:bg-blue-600"
+                    className="flex items-center gap-4 bg-green-400 hover:bg-green-500 text-gray font-semibold"
                 >
                     {actionButtonIcon}
                     <span>{actionButtonTitle}</span>

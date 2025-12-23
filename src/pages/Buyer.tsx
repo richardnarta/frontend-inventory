@@ -72,7 +72,7 @@ export const BuyerPage = () => {
             createMutation.mutate(data as BuyerCreatePayload);
         }
     };
-    
+
     const handleDelete = (id: number) => deleteMutation.mutate(id);
     const handleReset = () => setSearchName('');
 
@@ -96,14 +96,14 @@ export const BuyerPage = () => {
 
     return (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <PageHeading headingTitle={`Data Pembeli`} actionButton={() => {}}/>
+            <PageHeading headingTitle={`Data Pembeli`} actionButton={() => { }} />
             <div className="bg-white dark:bg-gray-950 border p-4 rounded-xl shadow-sm mb-6">
                 <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                     <div>
                         <Label htmlFor="searchName" className="block mb-2">Nama Pembeli</Label>
-                        <Input 
-                            id="searchName" 
-                            placeholder="Cari berdasarkan nama..." 
+                        <Input
+                            id="searchName"
+                            placeholder="Cari berdasarkan nama..."
                             value={searchName}
                             onChange={(e) => setSearchName(e.target.value)}
                         />
@@ -112,7 +112,7 @@ export const BuyerPage = () => {
                         <Button variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Reset Filter
                         </Button>
-                        <Button className="bg-blue-500 hover:bg-blue-600" onClick={openAddDialog}>
+                        <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
                             <Plus className="mr-2 h-4 w-4" /> Tambah Data Pembeli
                         </Button>
                     </div>
@@ -138,11 +138,10 @@ export const BuyerPage = () => {
                         <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-blue-200 hover:bg-blue-200">
+                                    <TableRow className="bg-green-200 hover:bg-green-200">
                                         <TableHead className="pl-6 py-4">ID Pembeli</TableHead>
                                         <TableHead>Nama Pembeli</TableHead>
                                         <TableHead>No. Telepon</TableHead>
-                                        <TableHead className="text-center">Status Piutang</TableHead>
                                         <TableHead className="max-w-xs">Alamat</TableHead>
                                         <TableHead className="max-w-xs">Catatan</TableHead>
                                         <TableHead className="text-center">Aksi</TableHead>
@@ -154,19 +153,6 @@ export const BuyerPage = () => {
                                             <TableCell className='font-medium pl-6'>{`BUYER-${data.id}`}</TableCell>
                                             <TableCell className="font-medium">{data.name}</TableCell>
                                             <TableCell>{data.phone_num || '-'}</TableCell>
-                                            <TableCell className="text-center">
-                                                {data.is_risked ? (
-                                                    <div className="flex items-center justify-center gap-2 text-amber-600">
-                                                        <AlertTriangle className="h-5 w-5" />
-                                                        <span className="font-medium">Berisiko</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-center gap-2 text-green-600">
-                                                        <CheckCircle2 className="h-5 w-5" />
-                                                        <span className="font-medium">Aman</span>
-                                                    </div>
-                                                )}
-                                            </TableCell>
                                             <TableCell className="max-w-xs">
                                                 <div className="break-words whitespace-normal">
                                                     {data.address || '-'}
@@ -211,23 +197,6 @@ export const BuyerPage = () => {
                                             <div className="font-semibold text-gray-500">No. Telepon</div>
                                             <div className="text-right break-words">{data.phone_num || '-'}</div>
                                         </div>
-                                        
-                                        <div className="grid grid-cols-2 gap-x-4">
-                                            <div className="font-semibold text-gray-500">Status Piutang</div>
-                                            <div className="text-right">
-                                                {data.is_risked ? (
-                                                    <div className="flex items-center justify-end gap-1 text-amber-600">
-                                                        <AlertTriangle className="h-4 w-4" />
-                                                        <span className="font-medium">Berisiko</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-end gap-1 text-green-600">
-                                                        <CheckCircle2 className="h-4 w-4" />
-                                                        <span className="font-medium">Aman</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
 
                                         {data.note && (
                                             <div className="pt-2 border-t">
@@ -261,7 +230,7 @@ export const BuyerPage = () => {
                     </div>
                 )
             )}
-            
+
             {isFormOpen && (
                 <CreateUpdateBuyerFormDialog
                     buyer={editingBuyer}

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, LogIn } from 'lucide-react';
+import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
 import { login } from '@/service/auth';
 import { toast } from "sonner";
 
@@ -23,6 +23,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +33,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     try {
       const response = await login({ username, password });
       if (response.error) {
-         throw new Error(response.message || 'Login failed');
+        throw new Error(response.message || 'Login failed');
       }
       toast.success('Login successful!');
       // A small delay to let the user see the success message
@@ -55,7 +56,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-blue-500 dark:text-blue-300">InventoryApp</CardTitle>
+          <CardTitle className="text-2xl font-bold text-green-600 dark:text-green-400">HidupBaru</CardTitle>
           <CardDescription>Masukkan kredensial anda untuk mengakses dashboard.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -73,19 +74,34 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
           </CardContent>
           <CardFooter>
-            <Button className="bg-blue-500 font-semibold hover:bg-blue-600 w-full mt-12"type="submit" disabled={isLoading}>
+            <Button className="bg-green-400 font-semibold hover:bg-green-500 text-gray-900 w-full mt-12" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (

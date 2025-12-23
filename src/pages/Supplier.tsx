@@ -72,7 +72,7 @@ export const SupplierPage = () => {
             createMutation.mutate(data as SupplierCreatePayload);
         }
     };
-    
+
     const handleDelete = (id: number) => deleteMutation.mutate(id);
     const handleReset = () => setSearchName('');
 
@@ -96,14 +96,14 @@ export const SupplierPage = () => {
 
     return (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <PageHeading headingTitle={`Data Supplier`} actionButton={() => {}}/>
+            <PageHeading headingTitle={`Data Supplier`} actionButton={() => { }} />
             <div className="bg-white dark:bg-gray-950 border p-4 rounded-xl shadow-sm mb-6">
                 <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                     <div>
                         <Label htmlFor="searchName" className="block mb-2">Nama Supplier</Label>
-                        <Input 
-                            id="searchName" 
-                            placeholder="Cari berdasarkan nama..." 
+                        <Input
+                            id="searchName"
+                            placeholder="Cari berdasarkan nama..."
                             value={searchName}
                             onChange={(e) => setSearchName(e.target.value)}
                         />
@@ -112,7 +112,7 @@ export const SupplierPage = () => {
                         <Button variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Reset Filter
                         </Button>
-                        <Button className="bg-blue-500 hover:bg-blue-600" onClick={openAddDialog}>
+                        <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
                             <Plus className="mr-2 h-4 w-4" /> Tambah Data Supplier
                         </Button>
                     </div>
@@ -138,7 +138,7 @@ export const SupplierPage = () => {
                         <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-blue-200 hover:bg-blue-200">
+                                    <TableRow className="bg-green-200 hover:bg-green-200">
                                         <TableHead className="pl-6 py-4">ID Supplier</TableHead>
                                         <TableHead>Nama Supplier</TableHead>
                                         <TableHead>No. Telepon</TableHead>
@@ -240,7 +240,7 @@ export const SupplierPage = () => {
                     </div>
                 )
             )}
-            
+
             {isFormOpen && (
                 <CreateUpdateSupplierFormDialog
                     supplier={editingSupplier}

@@ -1,38 +1,40 @@
 import { useState, useMemo } from 'react';
-import { type InventoryData } from '../model/inventory';
+import { type InventoryData, type QuantityUnit } from '../model/inventory';
 
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import {
-  Save, Loader2
+    Save, Loader2
 } from 'lucide-react';
 
-import { parseIndonesianNumber, formatNumber, capitalize } from '../lib/utils';
+import { parseIndonesianNumber, formatNumber } from '../lib/utils';
 
 
 type CreateUpdateInventoryFormDialogProps = {
-    typeMessage: string,
     product?: InventoryData;
-    onSave: (data: Omit<InventoryData, 'total' | 'type' | 'bale_count'>) => Promise<void> | void;
+    onSave: (data: InventoryData) => Promise<void> | void;
     closeDialog: () => void;
 };
 
 
 export const CreateUpdateInventoryFormDialog = ({
-    typeMessage,
     product,
     onSave,
     closeDialog,
 }: CreateUpdateInventoryFormDialogProps) => {
-    
+
     const initialFormState = useMemo(() => ({
-        id: product?.id || '',
-        name: product?.name || '',
-        roll_count: product?.roll_count ? formatNumber(product.roll_count) : 0,
-        weight_kg: product?.weight_kg ? formatNumber(product.weight_kg) : 0,
+        kode_barang: product?.kode_barang || '',
+        nama_barang: product?.nama_barang || '',
+        quantity: product?.quantity ? formatNumber(product.quantity) : '',
+        quantity_unit: product?.quantity_unit || 'buah' as QuantityUnit,
+        harga_modal: product?.harga_modal ? formatNumber(product.harga_modal) : '',
+        harga_jual_eceran: product?.harga_jual_eceran ? formatNumber(product.harga_jual_eceran) : '',
+        harga_jual_grosir: product?.harga_jual_grosir ? formatNumber(product.harga_jual_grosir) : '',
     }), [product]);
 
     const [formData, setFormData] = useState(initialFormState);
@@ -75,13 +77,20 @@ export const CreateUpdateInventoryFormDialog = ({
         setFormData(prev => ({ ...prev, [id]: finalValue }));
     };
 
+    const handleUnitChange = (value: string) => {
+        setFormData(prev => ({ ...prev, quantity_unit: value as QuantityUnit }));
+    };
+
     const handleSubmit = async () => {
         setIsSaving(true);
-        const dataToSave: Omit<InventoryData, 'total' | 'type' | 'bale_count'> = {
-            id: product ? product.id : formData.id,
-            name: formData.name,
-            roll_count: parseIndonesianNumber(formData.roll_count) || 0,
-            weight_kg: parseIndonesianNumber(formData.weight_kg) || 0,
+        const dataToSave: InventoryData = {
+            kode_barang: product ? product.kode_barang : formData.kode_barang.toUpperCase(),
+            nama_barang: formData.nama_barang,
+            quantity: parseIndonesianNumber(formData.quantity) || 0,
+            quantity_unit: formData.quantity_unit,
+            harga_modal: parseIndonesianNumber(formData.harga_modal) || 0,
+            harga_jual_eceran: parseIndonesianNumber(formData.harga_jual_eceran) || 0,
+            harga_jual_grosir: parseIndonesianNumber(formData.harga_jual_grosir) || 0,
         };
 
         await onSave(dataToSave);
@@ -89,42 +98,108 @@ export const CreateUpdateInventoryFormDialog = ({
         setIsSaving(false);
     };
 
+    const isFormValid = formData.kode_barang !== '' && formData.nama_barang !== '';
+
     return (
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
             <DialogHeader>
                 <DialogTitle>
-                    {
-                        product ? 
-                        `Edit Data ${capitalize(typeMessage)}` 
-                        : `Tambah ${capitalize(typeMessage)} Baru`
-                    }
+                    {product ? `Edit Data Barang` : `Tambah Barang Baru`}
                 </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="id" className="text-right">Kode barang</Label>
-                    <Input id="id" value={formData.id} onChange={handleChange} className="col-span-3" disabled={!!product} spellCheck="false"/>
+                    <Label htmlFor="kode_barang" className="text-right">Kode Barang</Label>
+                    <Input
+                        id="kode_barang"
+                        value={formData.kode_barang}
+                        onChange={handleChange}
+                        className="col-span-3"
+                        disabled={!!product}
+                        spellCheck="false"
+                        placeholder="e.g., BRG001"
+                    />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Nama barang</Label>
-                    <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" spellCheck="false"/>
+                    <Label htmlFor="nama_barang" className="text-right">Nama Barang</Label>
+                    <Input
+                        id="nama_barang"
+                        value={formData.nama_barang}
+                        onChange={handleChange}
+                        className="col-span-3"
+                        spellCheck="false"
+                        placeholder="e.g., Produk A"
+                    />
                 </div>
-                {(typeMessage === 'kain') && (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="roll_count" className="text-right">Jumlah Roll</Label>
-                        <Input id="roll_count" type="numeric" value={formData.roll_count} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 10" spellCheck="false"/>
-                    </div>
-                )}
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="weight_kg" className="text-right">Berat (Kg)</Label>
-                    <Input id="weight_kg" type="numeric" step="any" value={formData.weight_kg} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 22,5" spellCheck="false"/>
+                    <Label htmlFor="quantity" className="text-right">Jumlah Stok</Label>
+                    <Input
+                        id="quantity"
+                        type="numeric"
+                        value={formData.quantity}
+                        onChange={handleNumberChange}
+                        className="col-span-3"
+                        placeholder="e.g., 100"
+                        spellCheck="false"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="quantity_unit" className="text-right">Satuan</Label>
+                    <Select value={formData.quantity_unit} onValueChange={handleUnitChange}>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Pilih satuan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="buah">Buah</SelectItem>
+                            <SelectItem value="lusin">Lusin</SelectItem>
+                            <SelectItem value="kodi">Kodi</SelectItem>
+                            <SelectItem value="dus">Dus</SelectItem>
+                            <SelectItem value="bal">Bal</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="harga_modal" className="text-right">Harga Modal</Label>
+                    <Input
+                        id="harga_modal"
+                        type="numeric"
+                        value={formData.harga_modal}
+                        onChange={handleNumberChange}
+                        className="col-span-3"
+                        placeholder="e.g., 5.000"
+                        spellCheck="false"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="harga_jual_eceran" className="text-right">Harga Eceran</Label>
+                    <Input
+                        id="harga_jual_eceran"
+                        type="numeric"
+                        value={formData.harga_jual_eceran}
+                        onChange={handleNumberChange}
+                        className="col-span-3"
+                        placeholder="e.g., 7.000"
+                        spellCheck="false"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="harga_jual_grosir" className="text-right">Harga Grosir</Label>
+                    <Input
+                        id="harga_jual_grosir"
+                        type="numeric"
+                        value={formData.harga_jual_grosir}
+                        onChange={handleNumberChange}
+                        className="col-span-3"
+                        placeholder="e.g., 6.000"
+                        spellCheck="false"
+                    />
                 </div>
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeDialog}>
                     Kembali
                 </Button>
-                <Button onClick={handleSubmit} disabled={isSaving || isUnchanged || formData.id == '' || formData.name == ''}>
+                <Button onClick={handleSubmit} disabled={isSaving || isUnchanged || !isFormValid}>
                     {isSaving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (

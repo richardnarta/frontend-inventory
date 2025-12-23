@@ -1,19 +1,17 @@
-// service/purchase_transaction.ts
 import { api } from "@/lib/utils";
 import axios from "axios";
 import type {
   PurchaseTransactionListResponse,
-  SinglePurchaseTransactionResponse,
-  PurchaseTransactionCreatePayload,
-  PurchaseTransactionUpdatePayload,
+  PurchaseTransactionData,
+  PurchaseTransactionCreateRequest,
+  PurchaseTransactionUpdateRequest,
 } from "@/model/purchase_transaction";
 
 export type PurchaseTransactionFilters = {
-    supplier_id?: number | null;
-    inventory_id?: string | null;
-    start_date?: string | null;
-    end_date?: string | null;
-    type?: string
+  supplier_id?: number | null;
+  inventory_id?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
 };
 
 export const getPurchaseTransactions = async (
@@ -31,25 +29,25 @@ export const getPurchaseTransactions = async (
   return response.data;
 };
 
-export const createPurchaseTransaction = async (transactionData: PurchaseTransactionCreatePayload): Promise<SinglePurchaseTransactionResponse> => {
+export const createPurchaseTransaction = async (transactionData: PurchaseTransactionCreateRequest) => {
   try {
     const response = await api.post('/v1/purchase-transaction', transactionData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.message || 'Gagal menambah data transaksi pembelian baru.');
+      throw new Error(error.response.data.detail || 'Gagal menambah data transaksi pembelian baru.');
     }
     throw new Error('Gagal menambah data transaksi pembelian baru.');
   }
 };
 
-export const updatePurchaseTransaction = async (id: number, transactionData: PurchaseTransactionUpdatePayload): Promise<SinglePurchaseTransactionResponse> => {
+export const updatePurchaseTransaction = async (id: number, transactionData: PurchaseTransactionUpdateRequest) => {
   try {
     const response = await api.put(`/v1/purchase-transaction/${id}`, transactionData);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.message || 'Gagal merubah data transaksi pembelian.');
+      throw new Error(error.response.data.detail || 'Gagal merubah data transaksi pembelian.');
     }
     throw new Error('Gagal merubah data transaksi pembelian.');
   }
@@ -61,7 +59,7 @@ export const deletePurchaseTransactionById = async (id: number) => {
     return { message: 'Purchase transaction deleted successfully' };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.message || 'Gagal menghapus data transaksi pembelian.');
+      throw new Error(error.response.data.detail || 'Gagal menghapus data transaksi pembelian.');
     }
     throw new Error('Gagal menghapus data transaksi pembelian.');
   }
