@@ -5,6 +5,7 @@ import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import {
@@ -31,7 +32,8 @@ export const CreateUpdateInventoryFormDialog = ({
         kode_barang: product?.kode_barang || '',
         nama_barang: product?.nama_barang || '',
         quantity: product?.quantity ? formatNumber(product.quantity) : '',
-        quantity_unit: product?.quantity_unit || 'buah' as QuantityUnit,
+        quantity_unit: product?.quantity_unit || 'Pcs' as QuantityUnit,
+        additional_note: product?.additional_note || '',
         harga_modal: product?.harga_modal ? formatNumber(product.harga_modal) : '',
         harga_jual_eceran: product?.harga_jual_eceran ? formatNumber(product.harga_jual_eceran) : '',
         harga_jual_grosir: product?.harga_jual_grosir ? formatNumber(product.harga_jual_grosir) : '',
@@ -44,7 +46,7 @@ export const CreateUpdateInventoryFormDialog = ({
         return JSON.stringify(formData) === JSON.stringify(initialFormState);
     }, [formData, initialFormState]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
@@ -88,6 +90,7 @@ export const CreateUpdateInventoryFormDialog = ({
             nama_barang: formData.nama_barang,
             quantity: parseIndonesianNumber(formData.quantity) || 0,
             quantity_unit: formData.quantity_unit,
+            additional_note: formData.additional_note,
             harga_modal: parseIndonesianNumber(formData.harga_modal) || 0,
             harga_jual_eceran: parseIndonesianNumber(formData.harga_jual_eceran) || 0,
             harga_jual_grosir: parseIndonesianNumber(formData.harga_jual_grosir) || 0,
@@ -150,13 +153,32 @@ export const CreateUpdateInventoryFormDialog = ({
                             <SelectValue placeholder="Pilih satuan" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="buah">Buah</SelectItem>
-                            <SelectItem value="lusin">Lusin</SelectItem>
-                            <SelectItem value="kodi">Kodi</SelectItem>
-                            <SelectItem value="dus">Dus</SelectItem>
-                            <SelectItem value="bal">Bal</SelectItem>
+                            <SelectItem value="Pcs">Pcs</SelectItem>
+                            <SelectItem value="Dus">Dus</SelectItem>
+                            <SelectItem value="Kotak">Kotak</SelectItem>
+                            <SelectItem value="Batang">Batang</SelectItem>
+                            <SelectItem value="Bal">Bal</SelectItem>
+                            <SelectItem value="Pak">Pak</SelectItem>
+                            <SelectItem value="Sak">Sak</SelectItem>
+                            <SelectItem value="Lembar">Lembar</SelectItem>
+                            <SelectItem value="Meter">Meter</SelectItem>
+                            <SelectItem value="Kilogram">Kilogram</SelectItem>
+                            <SelectItem value="Lusin">Lusin</SelectItem>
+                            <SelectItem value="Ons">Ons</SelectItem>
                         </SelectContent>
                     </Select>
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="additional_note" className="text-right pt-2">Keterangan</Label>
+                    <Textarea
+                        id="additional_note"
+                        value={formData.additional_note}
+                        onChange={handleChange}
+                        className="col-span-3"
+                        placeholder="Catatan tambahan (opsional)"
+                        rows={3}
+                        spellCheck="false"
+                    />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="harga_modal" className="text-right">Harga Modal</Label>

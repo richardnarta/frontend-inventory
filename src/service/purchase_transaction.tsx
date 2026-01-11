@@ -34,7 +34,8 @@ export const createPurchaseTransaction = async (transactionData: PurchaseTransac
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.detail || 'Gagal menambah data transaksi pembelian baru.');
+      const errorMsg = error.response.data.message || error.response.data.detail || 'Gagal menambah data transaksi pembelian baru.';
+      throw new Error(errorMsg);
     }
     throw new Error('Gagal menambah data transaksi pembelian baru.');
   }
@@ -46,7 +47,8 @@ export const updatePurchaseTransaction = async (id: number, transactionData: Pur
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.detail || 'Gagal merubah data transaksi pembelian.');
+      const errorMsg = error.response.data.message || error.response.data.detail || 'Gagal merubah data transaksi pembelian.';
+      throw new Error(errorMsg);
     }
     throw new Error('Gagal merubah data transaksi pembelian.');
   }
@@ -58,7 +60,8 @@ export const deletePurchaseTransactionById = async (id: number) => {
     return { message: 'Purchase transaction deleted successfully' };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.detail || 'Gagal menghapus data transaksi pembelian.');
+      const errorMsg = error.response.data.message || error.response.data.detail || 'Gagal menghapus data transaksi pembelian.';
+      throw new Error(errorMsg);
     }
     throw new Error('Gagal menghapus data transaksi pembelian.');
   }

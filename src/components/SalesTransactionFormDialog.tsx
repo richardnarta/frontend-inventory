@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { SalesTransactionCreateRequest } from '../model/sales_transaction';
 import { type DropdownItem, Dropdown } from './Dropdown';
-import { type QuantityUnit } from '../model/inventory';
+import { LazyDropdown } from './LazyDropdown';
+import { type InventoryData } from '../model/inventory';
 
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -15,7 +16,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Loader2 } from 'lucide-react';
-import { parseIndonesianNumber } from '../lib/utils';
+import { parseIndonesianNumber, formatNumber } from '../lib/utils';
+import { getInventoryById, getInventories } from '../service/inventory';
 
 type CreateSalesTransactionFormDialogProps = {
     onSave: (data: SalesTransactionCreateRequest) => Promise<void> | void;
@@ -30,9 +32,7 @@ export const CreateSalesTransactionFormDialog = ({
     onSave,
     closeDialog,
     buyers,
-    inventories,
     isBuyersLoading,
-    isInventoriesLoading,
 }: CreateSalesTransactionFormDialogProps) => {
 
     const initialFormState = useMemo(() => ({
@@ -40,12 +40,48 @@ export const CreateSalesTransactionFormDialog = ({
         buyer_id: '',
         inventory_id: '',
         quantity: '0',
-        quantity_unit: 'buah' as QuantityUnit,
         price_per_unit: '0',
     }), []);
 
     const [formData, setFormData] = useState(initialFormState);
     const [isSaving, setIsSaving] = useState(false);
+    const [salesType, setSalesType] = useState<'eceran' | 'grosir'>('eceran');
+    const [selectedInventory, setSelectedInventory] = useState<InventoryData | null>(null);
+    const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+
+    // Fetch inventory details when inventory_id changes
+    useEffect(() => {
+        const fetchInventoryDetails = async () => {
+            if (formData.inventory_id) {
+                setIsLoadingInventory(true);
+                try {
+                    const inventory = await getInventoryById(formData.inventory_id);
+                    setSelectedInventory(inventory);
+                    // Don't auto-fill price here, wait for salesType change
+                } catch (error) {
+                    setSelectedInventory(null);
+                } finally {
+                    setIsLoadingInventory(false);
+                }
+            } else {
+                setSelectedInventory(null);
+            }
+        };
+        fetchInventoryDetails();
+    }, [formData.inventory_id]);
+
+    // Auto-fill price when inventory or sales type changes
+    useEffect(() => {
+        if (selectedInventory) {
+            const price = salesType === 'grosir'
+                ? selectedInventory.harga_jual_grosir
+                : selectedInventory.harga_jual_eceran;
+            setFormData(prev => ({
+                ...prev,
+                price_per_unit: formatNumber(price)
+            }));
+        }
+    }, [selectedInventory, salesType]);
 
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -73,7 +109,7 @@ export const CreateSalesTransactionFormDialog = ({
             buyer_id: parseInt(formData.buyer_id, 10),
             inventory_id: formData.inventory_id,
             quantity,
-            quantity_unit: formData.quantity_unit,
+            // quantity_unit removed - backend auto-fills from inventory
             price_per_unit,
             total_price: quantity * price_per_unit,
         };
@@ -111,26 +147,58 @@ export const CreateSalesTransactionFormDialog = ({
                     <Dropdown items={buyers} value={formData.buyer_id} onChange={(value) => setFormData(prev => ({ ...prev, buyer_id: value }))} placeholder='Pilih pembeli' searchPlaceholder='Cari pembeli...' emptyMessage='Pembeli tidak ditemukan' isLoading={isBuyersLoading} className="col-span-3" />
                 </div>
 
+
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="inventory_id" className="text-right">Nama Barang</Label>
-                    <Dropdown items={inventories} value={formData.inventory_id} onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))} placeholder='Pilih barang' searchPlaceholder='Cari barang...' emptyMessage='Barang tidak ditemukan' isLoading={isInventoriesLoading} className="col-span-3" />
+                    <LazyDropdown
+                        value={formData.inventory_id}
+                        onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))}
+                        placeholder='Pilih barang'
+                        searchPlaceholder='Cari nama barang...'
+                        emptyMessage='Barang tidak ditemukan'
+                        onSearch={async (query) => {
+                            const results = await getInventories(
+                                { nama_barang: query },
+                                1,
+                                20 // Only load 20 items at a time
+                            );
+                            return results.items.map(item => ({
+                                value: item.kode_barang,
+                                label: item.nama_barang
+                            }));
+                        }}
+                        className="col-span-3"
+                    />
                 </div>
+
 
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="quantity" className="text-right">Jumlah</Label>
-                    <Input id="quantity" type="text" inputMode="decimal" value={formData.quantity} onChange={handleNumberChange} className="col-span-3" placeholder="e.g., 100" />
+                    <div className="col-span-3 flex gap-2 items-center">
+                        <Input
+                            id="quantity"
+                            type="text"
+                            inputMode="decimal"
+                            value={formData.quantity}
+                            onChange={handleNumberChange}
+                            className="flex-1"
+                            placeholder="e.g., 100"
+                        />
+                        <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[60px]">
+                            {isLoadingInventory ? '...' : selectedInventory ? selectedInventory.quantity_unit : '-'}
+                        </span>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="quantity_unit" className="text-right">Satuan</Label>
-                    <Select value={formData.quantity_unit} onValueChange={(value) => setFormData(prev => ({ ...prev, quantity_unit: value as QuantityUnit }))}>
-                        <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih satuan" /></SelectTrigger>
+                    <Label htmlFor="sales_type" className="text-right">Tipe Penjualan</Label>
+                    <Select value={salesType} onValueChange={(value) => setSalesType(value as 'eceran' | 'grosir')}>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Pilih tipe" />
+                        </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="buah">Buah</SelectItem>
-                            <SelectItem value="lusin">Lusin</SelectItem>
-                            <SelectItem value="kodi">Kodi</SelectItem>
-                            <SelectItem value="dus">Dus</SelectItem>
-                            <SelectItem value="bal">Bal</SelectItem>
+                            <SelectItem value="eceran">Eceran</SelectItem>
+                            <SelectItem value="grosir">Grosir</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

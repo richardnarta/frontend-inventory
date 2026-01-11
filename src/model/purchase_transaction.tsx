@@ -24,7 +24,7 @@ export interface PurchaseTransactionCreateRequest {
   inventory_id: string;
   transaction_date: string;
   quantity: number;
-  quantity_unit: QuantityUnit;
+  // quantity_unit removed - auto-filled from inventory
   price_per_unit: number;
   total_price?: number;  // Auto-calculated if not provided
 }
@@ -33,7 +33,7 @@ export interface PurchaseTransactionUpdateRequest {
   supplier_id?: number | null;
   inventory_id?: string;
   quantity?: number;
-  quantity_unit?: QuantityUnit;
+  // quantity_unit removed - auto-filled from inventory
   price_per_unit?: number;
   total_price?: number;
 }

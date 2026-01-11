@@ -34,7 +34,9 @@ export const createSalesTransaction = async (transactionData: SalesTransactionCr
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.detail || 'Gagal menambah data transaksi penjualan baru.');
+      // Try to get error message from response (check both 'message' and 'detail' fields)
+      const errorMsg = error.response.data.message || error.response.data.detail || 'Gagal menambah data transaksi penjualan baru.';
+      throw new Error(errorMsg);
     }
     throw new Error('Gagal menambah data transaksi penjualan baru.');
   }
@@ -46,7 +48,8 @@ export const updateSalesTransaction = async (id: number, transactionData: SalesT
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.detail || 'Gagal merubah data transaksi penjualan.');
+      const errorMsg = error.response.data.message || error.response.data.detail || 'Gagal merubah data transaksi penjualan.';
+      throw new Error(errorMsg);
     }
     throw new Error('Gagal merubah data transaksi penjualan.');
   }
@@ -58,7 +61,8 @@ export const deleteSalesTransactionById = async (id: number) => {
     return { message: 'Sales transaction deleted successfully' };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.detail || 'Gagal menghapus data transaksi penjualan.');
+      const errorMsg = error.response.data.message || error.response.data.detail || 'Gagal menghapus data transaksi penjualan.';
+      throw new Error(errorMsg);
     }
     throw new Error('Gagal menghapus data transaksi penjualan.');
   }

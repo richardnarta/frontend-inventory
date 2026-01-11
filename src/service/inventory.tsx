@@ -1,7 +1,8 @@
 import {
     type InventoryListResponse,
     type InventoryCreateRequest,
-    type InventoryUpdateRequest
+    type InventoryUpdateRequest,
+    type BatchUploadResponse
 } from "../model/inventory";
 import { api } from "../lib/utils";
 import axios from "axios";
@@ -19,6 +20,18 @@ export const getInventories = async (
 
     const response = await api.get('/v1/inventory', { params });
     return response.data;
+};
+
+export const getInventoryById = async (kode_barang: string) => {
+    try {
+        const response = await api.get(`/v1/inventory/${kode_barang}`);
+        return response.data.data; // Returns InventoryData
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            throw new Error(error.response.data.detail || 'Failed to fetch inventory item');
+        }
+        throw new Error('An unexpected error occurred');
+    }
 };
 
 export const createInventory = async (productData: InventoryCreateRequest) => {
@@ -54,5 +67,54 @@ export const deleteInventoryById = async (kode_barang: string) => {
             throw new Error(error.response.data.detail || 'Failed to delete inventory item');
         }
         throw new Error('An unexpected error occurred');
+    }
+};
+
+export const batchUploadInventory = async (file: File): Promise<BatchUploadResponse> => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await api.post('/v1/inventory/batch-upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            throw new Error(error.response.data.detail || 'Failed to upload Excel file');
+        }
+        throw new Error('An unexpected error occurred during batch upload');
+    }
+};
+
+export const exportInventoryToExcel = async (): Promise<void> => {
+    try {
+        const response = await api.get('/v1/inventory/export-excel', {
+            responseType: 'blob', // Important for file download
+        });
+
+        // Create blob link to download
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+
+        // Generate filename with current date
+        const filename = `inventory_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+        link.setAttribute('download', filename);
+
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        // Clean up
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            throw new Error(error.response.data.detail || 'Failed to export inventory');
+        }
+        throw new Error('An unexpected error occurred during export');
     }
 };

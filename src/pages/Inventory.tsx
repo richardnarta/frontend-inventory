@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { type InventoryData } from '../model/inventory';
 import { useDebounce } from '../hooks/debouncing';
 
@@ -13,14 +13,16 @@ import { toast } from 'sonner';
 import { CreateUpdateInventoryFormDialog } from '../components/InventoryFormDialog';
 import { DeleteConfirmationDialog } from '../components/DeleteDialog';
 
-import { getInventories, createInventory, updateInventory, deleteInventoryById } from '../service/inventory';
+import { getInventories, createInventory, updateInventory, deleteInventoryById, batchUploadInventory, exportInventoryToExcel } from '../service/inventory';
 
 import {
     RotateCcw,
     Plus,
     Pencil,
     Trash2,
-    Loader2
+    Loader2,
+    Upload,
+    Download
 } from 'lucide-react';
 
 import { formatNumber } from '../lib/utils';
@@ -35,6 +37,8 @@ export const InventoryPage = () => {
     const [editingProduct, setEditingProduct] = useState<InventoryData | undefined>(undefined);
     const [searchKode, setSearchKode] = useState('');
     const [searchNama, setSearchNama] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     const debouncedSearchKode = useDebounce(searchKode, 500);
     const debouncedSearchNama = useDebounce(searchNama, 500);
@@ -88,6 +92,28 @@ export const InventoryPage = () => {
         },
     });
 
+    const uploadMutation = useMutation({
+        mutationFn: batchUploadInventory,
+        onSuccess: (data) => {
+            toast.success(
+                `Berhasil: ${data.successful_imports} | Duplikat: ${data.duplicate_skipped} | Di-skip: ${data.skipped_rows}`,
+                { duration: 5000 }
+            );
+            queryClient.invalidateQueries({ queryKey: ['inventories'] });
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        },
+        onError: (error: Error) => {
+            toast.error(`Gagal upload: ${error.message}`);
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        },
+    });
+
     const handleReset = () => {
         setSearchKode('');
         setSearchNama('');
@@ -103,6 +129,34 @@ export const InventoryPage = () => {
 
     const handleDelete = (kode_barang: string) => {
         deleteMutation.mutate(kode_barang);
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            // Validate file type
+            if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+                toast.error('File harus berformat Excel (.xlsx atau .xls)');
+                return;
+            }
+            uploadMutation.mutate(file);
+        }
+    };
+
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            await exportInventoryToExcel();
+            toast.success('Berhasil export inventory ke Excel');
+        } catch (error) {
+            toast.error(`Gagal export: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const triggerFileInput = () => {
+        fileInputRef.current?.click();
     };
 
     const openAddDialog = () => {
@@ -137,6 +191,43 @@ export const InventoryPage = () => {
                     <div className="flex flex-wrap gap-4 col-span-1 md:col-span-2 justify-start md:justify-end">
                         <Button variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Reset Filter
+                        </Button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".xlsx,.xls"
+                            onChange={handleFileChange}
+                            className="hidden"
+                        />
+                        <Button
+                            variant="outline"
+                            onClick={triggerFileInput}
+                            disabled={uploadMutation.isPending}
+                        >
+                            {uploadMutation.isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="mr-2 h-4 w-4" /> Upload Excel
+                                </>
+                            )}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleExport}
+                            disabled={isExporting}
+                        >
+                            {isExporting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Exporting...
+                                </>
+                            ) : (
+                                <>
+                                    <Download className="mr-2 h-4 w-4" /> Export Excel
+                                </>
+                            )}
                         </Button>
                         <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
                             <Plus className="mr-2 h-4 w-4" /> Tambah Barang
