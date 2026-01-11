@@ -216,16 +216,6 @@ export const PurchaseTransactionPage = () => {
                         />
                     </div>
                     <div>
-                        <Label htmlFor="inventoryFilter" className="block mb-2">Nama Barang</Label>
-                        <Dropdown
-                            items={mapToDropdownItems(inventoryData?.items, { valueKey: 'kode_barang', labelKey: 'nama_barang' })}
-                            value={inventoryId}
-                            onChange={setInventoryId}
-                            placeholder='Pilih Barang'
-                            isLoading={isInventoriesLoading}
-                        />
-                    </div>
-                    <div>
                         <Label htmlFor="dateRangeFilter" className="block mb-2">Rentang Tanggal</Label>
                         <Popover>
                             <PopoverTrigger asChild>
