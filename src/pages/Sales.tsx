@@ -20,6 +20,7 @@ import { Pagination } from '@/components/Pagination';
 import { DeleteConfirmationDialog } from '@/components/DeleteDialog';
 import { CreateSalesTransactionFormDialog } from '@/components/SalesTransactionFormDialog';
 import { Dropdown } from '@/components/Dropdown';
+import { ViewItemsDialog } from '@/components/ViewItemsDialog';
 
 import { getBuyers } from '@/service/buyer';
 import { getInventories } from '@/service/inventory';
@@ -32,6 +33,10 @@ export const SalesTransactionPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [viewItemsDialog, setViewItemsDialog] = useState<{ open: boolean; transactionId: number | null }>({
+        open: false,
+        transactionId: null
+    });
 
     const [buyerId, setBuyerId] = useState('');
     const [inventoryId, setInventoryId] = useState('');
@@ -134,22 +139,89 @@ export const SalesTransactionPage = () => {
             }
 
             const title = `Data Penjualan ${dateRangeString}`;
-            const header = ["Tanggal", "Pembeli", "Barang", "Jumlah", "Satuan", "Harga/Unit", "Total"];
+            const header = [
+                "No. Transaksi",
+                "Tanggal",
+                "Pembeli",
+                "Nama Barang",
+                "Jumlah",
+                "Harga Satuan",
+                "Total Harga",
+                "Total Penjualan"
+            ];
 
-            const dataToExport = allTransactionsData.items.map(data => ([
-                formatDate(data.transaction_date),
-                data.buyer?.name || '-',
-                data.inventory?.nama_barang || '-',
-                data.quantity,
-                data.quantity_unit.toUpperCase(),
-                data.price_per_unit,
-                data.total_price
-            ]));
+            // Build data with one row per item
+            const dataToExport: any[][] = [];
+            const merges: any[] = [];
+            let currentRow = 3; // Starting row (after title + blank + header)
+
+            allTransactionsData.items.forEach(transaction => {
+                const items = transaction.items || [];
+                const itemCount = items.length || 1;
+
+                if (items.length === 0) {
+                    // Empty transaction - single row with no item details
+                    dataToExport.push([
+                        `#${transaction.id}`,
+                        formatDate(transaction.transaction_date),
+                        transaction.buyer?.name || '-',
+                        '-',
+                        0,
+                        0,
+                        0,
+                        transaction.total_amount
+                    ]);
+                    currentRow++;
+                } else {
+                    // Transaction with items - one row per item
+                    items.forEach((item, itemIndex) => {
+                        dataToExport.push([
+                            itemIndex === 0 ? `#${transaction.id}` : '', // Only first row shows transaction ID
+                            itemIndex === 0 ? formatDate(transaction.transaction_date) : '',
+                            itemIndex === 0 ? (transaction.buyer?.name || '-') : '',
+                            item.inventory?.nama_barang || item.inventory_id,
+                            item.quantity,
+                            item.price_per_unit,
+                            item.subtotal,
+                            itemIndex === 0 ? transaction.total_amount : ''
+                        ]);
+                    });
+
+                    // Merge cells for transaction-level fields (No Transaksi, Tanggal, Pembeli, Total Penjualan)
+                    if (itemCount > 1) {
+                        // Merge No. Transaksi (column 0)
+                        merges.push({ s: { r: currentRow, c: 0 }, e: { r: currentRow + itemCount - 1, c: 0 } });
+                        // Merge Tanggal (column 1)
+                        merges.push({ s: { r: currentRow, c: 1 }, e: { r: currentRow + itemCount - 1, c: 1 } });
+                        // Merge Pembeli (column 2)
+                        merges.push({ s: { r: currentRow, c: 2 }, e: { r: currentRow + itemCount - 1, c: 2 } });
+                        // Merge Total Penjualan (column 7)
+                        merges.push({ s: { r: currentRow, c: 7 }, e: { r: currentRow + itemCount - 1, c: 7 } });
+                    }
+
+                    currentRow += itemCount;
+                }
+            });
 
             const worksheetData = [[title], [], header, ...dataToExport];
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-            worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } }];
-            worksheet['!cols'] = [{ wch: 20 }, { wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }];
+
+            // Merge title row across all columns
+            worksheet['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } },
+                ...merges
+            ];
+
+            worksheet['!cols'] = [
+                { wch: 15 },  // No. Transaksi
+                { wch: 15 },  // Tanggal
+                { wch: 25 },  // Pembeli
+                { wch: 30 },  // Nama Barang
+                { wch: 12 },  // Jumlah
+                { wch: 15 },  // Harga Satuan
+                { wch: 15 },  // Total Harga
+                { wch: 18 }   // Total Penjualan
+            ];
 
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Data Penjualan");
@@ -228,38 +300,50 @@ export const SalesTransactionPage = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-green-200 hover:bg-green-200">
-                                    <TableHead className="pl-6 py-4">Tanggal</TableHead>
+                                    <TableHead className="pl-6 py-4">No.</TableHead>
+                                    <TableHead>Tanggal</TableHead>
                                     <TableHead>Pembeli</TableHead>
-                                    <TableHead>Barang</TableHead>
-                                    <TableHead className="text-right">Jumlah</TableHead>
-                                    <TableHead className="text-center">Satuan</TableHead>
-                                    <TableHead className="text-right">Harga/Unit</TableHead>
-                                    <TableHead className="text-right">Total</TableHead>
+                                    <TableHead className="text-center">Jenis Barang</TableHead>
+                                    <TableHead className="text-right">Total Jumlah</TableHead>
+                                    <TableHead className="text-right">Total Harga</TableHead>
                                     <TableHead className="text-center">Aksi</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {transactions.map((data) => (
-                                    <TableRow key={data.id}>
-                                        <TableCell className='pl-6'>{formatDate(data.transaction_date)}</TableCell>
-                                        <TableCell>{data.buyer?.name || '-'}</TableCell>
-                                        <TableCell>{data.inventory?.nama_barang || '-'}</TableCell>
-                                        <TableCell className="text-right">{formatNumber(data.quantity)}</TableCell>
-                                        <TableCell className="text-center uppercase">{data.quantity_unit}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(data.price_per_unit)}</TableCell>
-                                        <TableCell className="text-right font-semibold">{formatCurrency(data.total_price)}</TableCell>
-                                        <TableCell className="text-center py-4">
-                                            <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus transaksi penjualan ke "${data.buyer?.name}"?`}>
-                                                <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
-                                            </DeleteConfirmationDialog>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                {transactions.map((data) => {
+                                    const totalQuantity = data.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+                                    const itemCount = data.items?.length || 0;
+
+                                    return (
+                                        <TableRow key={data.id}>
+                                            <TableCell className='pl-6 font-medium'>#{data.id}</TableCell>
+                                            <TableCell>{formatDate(data.transaction_date)}</TableCell>
+                                            <TableCell>{data.buyer?.name || '-'}</TableCell>
+                                            <TableCell className="text-center">{itemCount} jenis</TableCell>
+                                            <TableCell className="text-right">{formatNumber(totalQuantity)}</TableCell>
+                                            <TableCell className="text-right font-semibold">{formatCurrency(data.total_amount)}</TableCell>
+                                            <TableCell className="text-center py-4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setViewItemsDialog({ open: true, transactionId: data.id })}
+                                                    >
+                                                        Detail
+                                                    </Button>
+                                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus transaksi penjualan #${data.id}?`}>
+                                                        <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                                                    </DeleteConfirmationDialog>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                    <TableCell colSpan={6} className="font-bold text-right py-4">Total Penjualan</TableCell>
-                                    <TableCell className="text-right font-bold">{formatCurrency(transactions.reduce((sum, r) => sum + r.total_price, 0))}</TableCell>
+                                    <TableCell colSpan={5} className="font-bold text-right py-4">Total Penjualan</TableCell>
+                                    <TableCell className="text-right font-bold">{formatCurrency(transactions.reduce((sum, r) => sum + r.total_amount, 0))}</TableCell>
                                     <TableCell />
                                 </TableRow>
                             </TableFooter>
@@ -267,36 +351,47 @@ export const SalesTransactionPage = () => {
                     </div>
 
                     <div className="grid gap-4 md:hidden">
-                        {transactions.map((data) => (
-                            <Card key={data.id}>
-                                <CardHeader>
-                                    <CardTitle className="flex justify-between items-center text-base">
-                                        <span className="break-words">{data.buyer?.name || '-'}</span>
-                                        <span className="text-sm font-normal text-gray-500 whitespace-nowrap ml-2">{formatDate(data.transaction_date)}</span>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-2 text-sm">
-                                    <div className="font-semibold col-span-2 pb-2 border-b">{data.inventory?.nama_barang || '-'}</div>
-                                    <div className="grid grid-cols-2 gap-x-4">
-                                        <div className="font-semibold text-gray-500">Jumlah</div>
-                                        <div className="text-right">{formatNumber(data.quantity)} {data.quantity_unit}</div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-x-4">
-                                        <div className="font-semibold text-gray-500">Harga per Unit</div>
-                                        <div className="text-right">{formatCurrency(data.price_per_unit)}</div>
-                                    </div>
-                                    <div className="col-span-2 border-t mt-2 pt-2 grid grid-cols-2">
-                                        <div className="font-bold">Total</div>
-                                        <div className="text-right font-bold">{formatCurrency(data.total_price)}</div>
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="flex justify-end gap-2">
-                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus transaksi ke "${data.buyer?.name}"?`}>
-                                        <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
-                                    </DeleteConfirmationDialog>
-                                </CardFooter>
-                            </Card>
-                        ))}
+                        {transactions.map((data) => {
+                            const totalQuantity = data.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+                            const itemCount = data.items?.length || 0;
+
+                            return (
+                                <Card key={data.id}>
+                                    <CardHeader>
+                                        <CardTitle className="flex justify-between items-center text-base">
+                                            <span className="break-words">#{data.id} - {data.buyer?.name || '-'}</span>
+                                            <span className="text-sm font-normal text-gray-500 whitespace-nowrap ml-2">{formatDate(data.transaction_date)}</span>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-2 text-sm">
+                                        <div className="grid grid-cols-2 gap-x-4">
+                                            <div className="font-semibold text-gray-500">Jenis Barang</div>
+                                            <div className="text-right">{itemCount} jenis</div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-4">
+                                            <div className="font-semibold text-gray-500">Total Jumlah</div>
+                                            <div className="text-right">{formatNumber(totalQuantity)}</div>
+                                        </div>
+                                        <div className="col-span-2 border-t mt-2 pt-2 grid grid-cols-2">
+                                            <div className="font-bold">Total Harga</div>
+                                            <div className="text-right font-bold">{formatCurrency(data.total_amount)}</div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex justify-end gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setViewItemsDialog({ open: true, transactionId: data.id })}
+                                        >
+                                            Detail
+                                        </Button>
+                                        <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus transaksi penjualan #${data.id}?`}>
+                                            <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                                        </DeleteConfirmationDialog>
+                                    </CardFooter>
+                                </Card>
+                            );
+                        })}
                     </div>
 
                     <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} className='mt-6' />
@@ -307,10 +402,19 @@ export const SalesTransactionPage = () => {
                 <CreateSalesTransactionFormDialog
                     onSave={handleSave}
                     buyers={mapToDropdownItems(buyerData?.items, { valueKey: 'id', labelKey: 'name' })}
-                    inventories={mapToDropdownItems(inventoryData?.items, { valueKey: 'kode_barang', labelKey: 'nama_barang' })}
                     isBuyersLoading={isBuyersLoading}
-                    isInventoriesLoading={isInventoriesLoading}
                     closeDialog={closeDialog}
+                />
+            )}
+
+            {/* View Items Detail Dialog */}
+            {viewItemsDialog.open && viewItemsDialog.transactionId && (
+                <ViewItemsDialog
+                    open={viewItemsDialog.open}
+                    onClose={() => setViewItemsDialog({ open: false, transactionId: null })}
+                    items={transactions.find(t => t.id === viewItemsDialog.transactionId)?.items || []}
+                    title={`Detail Transaksi Penjualan #${viewItemsDialog.transactionId}`}
+                    totalAmount={transactions.find(t => t.id === viewItemsDialog.transactionId)?.total_amount || 0}
                 />
             )}
         </Dialog>

@@ -2,38 +2,51 @@ import { type BaseListResponse } from "./common";
 import { type SupplierData } from "./supplier";
 import { type InventoryData, type QuantityUnit } from "./inventory";
 
+// Individual item in a purchase transaction (for request)
+export interface PurchaseTransactionItemRequest {
+  inventory_id: string;
+  quantity: number;
+  price_per_unit: number;
+}
+
+// Individual item in a purchase transaction (for response)
+export interface PurchaseTransactionItemData {
+  id: number;
+  inventory_id: string;
+  quantity: number;
+  quantity_unit: QuantityUnit;
+  price_per_unit: number;
+  subtotal: number;
+  inventory?: InventoryData;
+}
+
+// Main purchase transaction data (header with items)
 export interface PurchaseTransactionData {
   id: number;
   transaction_date: string;
   supplier_id: number | null;
-  inventory_id: string;  // References kode_barang
-  quantity: number;
-  quantity_unit: QuantityUnit;
-  price_per_unit: number;
-  total_price: number;
+  notes: string | null;
+  total_amount: number;
   supplier?: SupplierData;
-  inventory?: InventoryData;
+  items: PurchaseTransactionItemData[];
 }
 
 export interface PurchaseTransactionListResponse extends BaseListResponse {
   items: PurchaseTransactionData[];
 }
 
+// Create request with multiple items
 export interface PurchaseTransactionCreateRequest {
-  supplier_id?: number | null;
-  inventory_id: string;
   transaction_date: string;
-  quantity: number;
-  // quantity_unit removed - auto-filled from inventory
-  price_per_unit: number;
-  total_price?: number;  // Auto-calculated if not provided
+  supplier_id?: number | null;
+  notes?: string | null;
+  items: PurchaseTransactionItemRequest[];
 }
 
+// Update request with multiple items
 export interface PurchaseTransactionUpdateRequest {
+  transaction_date?: string;
   supplier_id?: number | null;
-  inventory_id?: string;
-  quantity?: number;
-  // quantity_unit removed - auto-filled from inventory
-  price_per_unit?: number;
-  total_price?: number;
+  notes?: string | null;
+  items?: PurchaseTransactionItemRequest[];
 }

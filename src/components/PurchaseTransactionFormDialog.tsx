@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { PurchaseTransactionCreateRequest } from '../model/purchase_transaction';
 import { type DropdownItem, Dropdown } from './Dropdown';
-import { LazyDropdown } from './LazyDropdown';
-import { type InventoryData } from '../model/inventory';
+import { TransactionItemsTable, type TransactionItem } from './TransactionItemsTable';
+import { Textarea } from '@/components/ui/textarea';
 
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -13,10 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Save, Loader2 } from 'lucide-react';
-import { parseIndonesianNumber, formatNumber } from '../lib/utils';
-import { getInventoryById, getInventories } from '../service/inventory';
 
 type CreatePurchaseTransactionFormDialogProps = {
     onSave: (data: PurchaseTransactionCreateRequest) => Promise<void> | void;
@@ -35,92 +32,54 @@ export const CreatePurchaseTransactionFormDialog = ({
     const initialFormState = useMemo(() => ({
         transaction_date: new Date(),
         supplier_id: '',
-        inventory_id: '',
-        quantity: '0',
-        price_per_unit: '0',
+        notes: '',
+        items: [] as TransactionItem[]
     }), []);
 
     const [formData, setFormData] = useState(initialFormState);
     const [isSaving, setIsSaving] = useState(false);
-    const [selectedInventory, setSelectedInventory] = useState<InventoryData | null>(null);
-    const [isLoadingInventory, setIsLoadingInventory] = useState(false);
-
-    // Fetch inventory details when inventory_id changes
-    useEffect(() => {
-        const fetchInventoryDetails = async () => {
-            if (formData.inventory_id) {
-                setIsLoadingInventory(true);
-                try {
-                    const inventory = await getInventoryById(formData.inventory_id);
-                    setSelectedInventory(inventory);
-                    // Auto-fill price from harga_modal
-                    setFormData(prev => ({
-                        ...prev,
-                        price_per_unit: formatNumber(inventory.harga_modal)
-                    }));
-                } catch (error) {
-                    setSelectedInventory(null);
-                } finally {
-                    setIsLoadingInventory(false);
-                }
-            } else {
-                setSelectedInventory(null);
-            }
-        };
-        fetchInventoryDetails();
-    }, [formData.inventory_id]);
-
-    const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value } = e.target;
-        let cleanedValue = value.replace(/[^\d,]/g, '');
-        const parts = cleanedValue.split(',');
-        if (parts.length > 2) cleanedValue = parts[0] + ',' + parts.slice(1).join('');
-        if (cleanedValue === '') {
-            setFormData(prev => ({ ...prev, [id]: '0' }));
-            return;
-        }
-        const [integerPart, decimalPart] = cleanedValue.split(',');
-        const formattedInteger = new Intl.NumberFormat('id-ID').format(Number(integerPart.replace(/\./g, '')));
-        let finalValue = formattedInteger;
-        if (decimalPart !== undefined) finalValue += ',' + decimalPart;
-        setFormData(prev => ({ ...prev, [id]: finalValue }));
-    };
 
     const handleSubmit = async () => {
-        setIsSaving(true);
-        const quantity = parseIndonesianNumber(formData.quantity) || 0;
-        const price_per_unit = parseIndonesianNumber(formData.price_per_unit) || 0;
+        if (!isFormValid) return;
 
-        const dataToSave: PurchaseTransactionCreateRequest = {
-            transaction_date: format(formData.transaction_date, "yyyy-MM-dd'T'HH:mm:ss"),
-            supplier_id: parseInt(formData.supplier_id, 10),
-            inventory_id: formData.inventory_id,
-            quantity,
-            // quantity_unit removed - backend auto-fills from inventory
-            price_per_unit,
-            total_price: quantity * price_per_unit,
-        };
-        await onSave(dataToSave);
-        closeDialog();
-        setIsSaving(false);
+        setIsSaving(true);
+        try {
+            const dataToSave: PurchaseTransactionCreateRequest = {
+                transaction_date: format(formData.transaction_date, "yyyy-MM-dd'T'HH:mm:ss"),
+                supplier_id: formData.supplier_id ? parseInt(formData.supplier_id, 10) : undefined,
+                notes: formData.notes || undefined,
+                items: formData.items.map(item => ({
+                    inventory_id: item.inventory_id,
+                    quantity: item.quantity,
+                    price_per_unit: item.price_per_unit
+                }))
+            };
+            await onSave(dataToSave);
+            closeDialog();
+        } catch (error) {
+            console.error('Failed to save:', error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const isFormValid = formData.transaction_date && formData.supplier_id && formData.inventory_id &&
-        parseIndonesianNumber(formData.price_per_unit) > 0 && parseIndonesianNumber(formData.quantity) > 0;
+    const isFormValid = formData.transaction_date && formData.items.length > 0 &&
+        formData.items.every(item => item.quantity > 0 && item.price_per_unit > 0);
 
     return (
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[70vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>Tambah Transaksi Pembelian Baru</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="transaction_date" className="text-right">Tgl. Transaksi</Label>
+            <div className="space-y-6 py-4">
+                {/* Transaction Date */}
+                <div className="space-y-2">
+                    <Label htmlFor="transaction_date">Tanggal Transaksi</Label>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 variant={"outline"}
-                                className={cn("col-span-3 justify-start text-left font-normal", !formData.transaction_date && "text-muted-foreground")}
+                                className={cn("w-full justify-start text-left font-normal", !formData.transaction_date && "text-muted-foreground")}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {formData.transaction_date ? format(formData.transaction_date, "dd-MM-yyyy") : <span>Pilih tanggal</span>}
@@ -137,71 +96,41 @@ export const CreatePurchaseTransactionFormDialog = ({
                     </Popover>
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="supplier_id" className="text-right">Nama Supplier</Label>
+                {/* Supplier */}
+                <div className="space-y-2">
+                    <Label htmlFor="supplier_id">Nama Supplier (opsional)</Label>
                     <Dropdown
                         items={suppliers}
                         value={formData.supplier_id}
                         onChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))}
-                        placeholder='Pilih supplier'
+                        placeholder='Pilih supplier (opsional)'
                         searchPlaceholder='Cari supplier...'
                         emptyMessage='Supplier tidak ditemukan'
                         isLoading={isSuppliersLoading}
-                        className="col-span-3"
+                        className="w-full"
                     />
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="inventory_id" className="text-right">Nama Barang</Label>
-                    <LazyDropdown
-                        value={formData.inventory_id}
-                        onChange={(value) => setFormData(prev => ({ ...prev, inventory_id: value }))}
-                        placeholder='Pilih barang'
-                        searchPlaceholder='Cari nama barang...'
-                        emptyMessage='Barang tidak ditemukan'
-                        onSearch={async (query) => {
-                            const results = await getInventories(
-                                { nama_barang: query },
-                                1,
-                                20 // Only load 20 items at a time
-                            );
-                            return results.items.map(item => ({
-                                value: item.kode_barang,
-                                label: item.nama_barang
-                            }));
-                        }}
-                        className="col-span-3"
+                {/* Notes */}
+                <div className="space-y-2">
+                    <Label htmlFor="notes">Catatan (opsional)</Label>
+                    <Textarea
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Catatan transaksi (opsional)"
+                        className="w-full"
+                        rows={2}
                     />
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="quantity" className="text-right">Jumlah</Label>
-                    <div className="col-span-3 flex gap-2 items-center">
-                        <Input
-                            id="quantity"
-                            type="text"
-                            inputMode="decimal"
-                            value={formData.quantity}
-                            onChange={handleNumberChange}
-                            className="flex-1"
-                            placeholder="e.g., 100"
-                        />
-                        <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[60px]">
-                            {isLoadingInventory ? '...' : selectedInventory ? selectedInventory.quantity_unit : '-'}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="price_per_unit" className="text-right">Harga per Unit</Label>
-                    <Input
-                        id="price_per_unit"
-                        type="text"
-                        inputMode="decimal"
-                        value={formData.price_per_unit}
-                        onChange={handleNumberChange}
-                        className="col-span-3"
-                        placeholder="e.g., 5.000"
+                {/* Items Table */}
+                <div className="space-y-2">
+                    <Label className="mb-4 block text-base font-semibold">Daftar Item</Label>
+                    <TransactionItemsTable
+                        items={formData.items}
+                        onChange={(items) => setFormData(prev => ({ ...prev, items }))}
+                        priceType="wholesale"
                     />
                 </div>
             </div>
