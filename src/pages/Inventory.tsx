@@ -30,8 +30,10 @@ import { formatNumber } from '../lib/utils';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { PageHeading } from '@/components/PageHeading';
 import { Pagination } from '@/components/Pagination';
+import { useRole } from '@/hooks/use-role';
 
 export const InventoryPage = () => {
+    const { canWrite } = useRole();
     const [currentPage, setCurrentPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<InventoryData | undefined>(undefined);
@@ -192,28 +194,32 @@ export const InventoryPage = () => {
                         <Button variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Reset Filter
                         </Button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".xlsx,.xls"
-                            onChange={handleFileChange}
-                            className="hidden"
-                        />
-                        <Button
-                            variant="outline"
-                            onClick={triggerFileInput}
-                            disabled={uploadMutation.isPending}
-                        >
-                            {uploadMutation.isPending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
-                                </>
-                            ) : (
-                                <>
-                                    <Upload className="mr-2 h-4 w-4" /> Upload Excel
-                                </>
-                            )}
-                        </Button>
+                        {canWrite && (
+                            <>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".xlsx,.xls"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                                <Button
+                                    variant="outline"
+                                    onClick={triggerFileInput}
+                                    disabled={uploadMutation.isPending}
+                                >
+                                    {uploadMutation.isPending ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload className="mr-2 h-4 w-4" /> Upload Excel
+                                        </>
+                                    )}
+                                </Button>
+                            </>
+                        )}
                         <Button
                             variant="outline"
                             onClick={handleExport}
@@ -229,9 +235,11 @@ export const InventoryPage = () => {
                                 </>
                             )}
                         </Button>
-                        <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
-                            <Plus className="mr-2 h-4 w-4" /> Tambah Barang
-                        </Button>
+                        {canWrite && (
+                            <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
+                                <Plus className="mr-2 h-4 w-4" /> Tambah Barang
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -277,14 +285,18 @@ export const InventoryPage = () => {
                                             <TableCell className="text-right">Rp {formatNumber(p.harga_jual_grosir)}</TableCell>
                                             <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <Button variant="outline" size="icon" onClick={() => openEditDialog(p)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(p.kode_barang)} title="Apakah anda yakin ingin menghapus data barang ini?">
-                                                        <Button variant="destructive" size="icon">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </DeleteConfirmationDialog>
+                                                    {canWrite && (
+                                                        <>
+                                                            <Button variant="outline" size="icon" onClick={() => openEditDialog(p)}>
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <DeleteConfirmationDialog onConfirm={() => handleDelete(p.kode_barang)} title="Apakah anda yakin ingin menghapus data barang ini?">
+                                                                <Button variant="destructive" size="icon">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </DeleteConfirmationDialog>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -315,14 +327,18 @@ export const InventoryPage = () => {
                                         <div className="text-right">Rp {formatNumber(p.harga_jual_grosir)}</div>
                                     </CardContent>
                                     <CardFooter className="flex justify-end gap-2">
-                                        <Button variant="outline" size="icon" onClick={() => openEditDialog(p)}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <DeleteConfirmationDialog onConfirm={() => handleDelete(p.kode_barang)} title="Apakah anda yakin ingin menghapus data barang ini?">
-                                            <Button variant="destructive" size="icon">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </DeleteConfirmationDialog>
+                                        {canWrite && (
+                                            <>
+                                                <Button variant="outline" size="icon" onClick={() => openEditDialog(p)}>
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <DeleteConfirmationDialog onConfirm={() => handleDelete(p.kode_barang)} title="Apakah anda yakin ingin menghapus data barang ini?">
+                                                    <Button variant="destructive" size="icon">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </DeleteConfirmationDialog>
+                                            </>
+                                        )}
                                     </CardFooter>
                                 </Card>
                             ))}

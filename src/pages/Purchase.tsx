@@ -28,8 +28,10 @@ import { createPurchaseTransaction, deletePurchaseTransactionById, getPurchaseTr
 import type { PurchaseTransactionCreateRequest } from '@/model/purchase_transaction';
 import { mapToDropdownItems } from '@/lib/mapper';
 import { cn, formatCurrency, formatDate, formatNumber } from '@/lib/utils';
+import { useRole } from '@/hooks/use-role';
 
 export const PurchaseTransactionPage = () => {
+    const { canWrite } = useRole();
     const [currentPage, setCurrentPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -314,9 +316,11 @@ export const PurchaseTransactionPage = () => {
                         <Button variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" />Reset Filter
                         </Button>
-                        <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
-                            <Plus className="mr-2 h-4 w-4" />Tambah Pembelian
-                        </Button>
+                        {canWrite && (
+                            <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
+                                <Plus className="mr-2 h-4 w-4" />Tambah Pembelian
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -372,14 +376,16 @@ export const PurchaseTransactionPage = () => {
                                                         >
                                                             Detail
                                                         </Button>
-                                                        <DeleteConfirmationDialog
-                                                            onConfirm={() => handleDelete(data.id)}
-                                                            title={`Hapus transaksi pembelian #${data.id}?`}
-                                                        >
-                                                            <Button variant="destructive" size="icon">
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </DeleteConfirmationDialog>
+                                                        {canWrite && (
+                                                            <DeleteConfirmationDialog
+                                                                onConfirm={() => handleDelete(data.id)}
+                                                                title={`Hapus transaksi pembelian #${data.id}?`}
+                                                            >
+                                                                <Button variant="destructive" size="icon">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </DeleteConfirmationDialog>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -438,14 +444,16 @@ export const PurchaseTransactionPage = () => {
                                             >
                                                 Detail
                                             </Button>
-                                            <DeleteConfirmationDialog
-                                                onConfirm={() => handleDelete(data.id)}
-                                                title={`Hapus transaksi pembelian #${data.id}?`}
-                                            >
-                                                <Button variant="destructive" size="icon">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </DeleteConfirmationDialog>
+                                            {canWrite && (
+                                                <DeleteConfirmationDialog
+                                                    onConfirm={() => handleDelete(data.id)}
+                                                    title={`Hapus transaksi pembelian #${data.id}?`}
+                                                >
+                                                    <Button variant="destructive" size="icon">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </DeleteConfirmationDialog>
+                                            )}
                                         </CardFooter>
                                     </Card>
                                 );

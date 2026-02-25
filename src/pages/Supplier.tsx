@@ -19,8 +19,10 @@ import { CreateUpdateSupplierFormDialog } from '@/components/SupplierFormDialog'
 
 import type { SupplierCreatePayload, SupplierData, SupplierUpdatePayload } from '@/model/supplier';
 import { createSupplier, deleteSupplierById, getSuppliers, updateSupplier } from '@/service/supplier';
+import { useRole } from '@/hooks/use-role';
 
 export const SupplierPage = () => {
+    const { canWrite } = useRole();
     const [currentPage, setCurrentPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<SupplierData | undefined>(undefined);
@@ -112,9 +114,11 @@ export const SupplierPage = () => {
                         <Button variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Reset Filter
                         </Button>
-                        <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
-                            <Plus className="mr-2 h-4 w-4" /> Tambah Data Supplier
-                        </Button>
+                        {canWrite && (
+                            <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
+                                <Plus className="mr-2 h-4 w-4" /> Tambah Data Supplier
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -165,14 +169,18 @@ export const SupplierPage = () => {
                                             </TableCell>
                                             <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data supplier "${data.name}"?`}>
-                                                        <Button variant="destructive" size="icon">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </DeleteConfirmationDialog>
+                                                    {canWrite && (
+                                                        <>
+                                                            <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data supplier "${data.name}"?`}>
+                                                                <Button variant="destructive" size="icon">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </DeleteConfirmationDialog>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -218,14 +226,18 @@ export const SupplierPage = () => {
                                         )}
                                     </CardContent>
                                     <CardFooter className="flex justify-end gap-2">
-                                        <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data supplier "${data.name}"?`}>
-                                            <Button variant="destructive" size="icon">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </DeleteConfirmationDialog>
+                                        {canWrite && (
+                                            <>
+                                                <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data supplier "${data.name}"?`}>
+                                                    <Button variant="destructive" size="icon">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </DeleteConfirmationDialog>
+                                            </>
+                                        )}
                                     </CardFooter>
                                 </Card>
                             ))}

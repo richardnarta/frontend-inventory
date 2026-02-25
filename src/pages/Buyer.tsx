@@ -18,9 +18,11 @@ import { CreateUpdateBuyerFormDialog } from '@/components/BuyerFormDialog';
 
 import type { BuyerCreatePayload, BuyerData, BuyerUpdatePayload } from '@/model/buyer';
 import { createBuyer, deleteBuyerById, getBuyers, updateBuyer } from '@/service/buyer';
+import { useRole } from '@/hooks/use-role';
 
 
 export const BuyerPage = () => {
+    const { canWrite } = useRole();
     const [currentPage, setCurrentPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingBuyer, setEditingBuyer] = useState<BuyerData | undefined>(undefined);
@@ -112,9 +114,11 @@ export const BuyerPage = () => {
                         <Button variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Reset Filter
                         </Button>
-                        <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
-                            <Plus className="mr-2 h-4 w-4" /> Tambah Data Pembeli
-                        </Button>
+                        {canWrite && (
+                            <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
+                                <Plus className="mr-2 h-4 w-4" /> Tambah Data Pembeli
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -165,14 +169,18 @@ export const BuyerPage = () => {
                                             </TableCell>
                                             <TableCell className="text-center py-4">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data pembeli "${data.name}"?`}>
-                                                        <Button variant="destructive" size="icon">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </DeleteConfirmationDialog>
+                                                    {canWrite && (
+                                                        <>
+                                                            <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data pembeli "${data.name}"?`}>
+                                                                <Button variant="destructive" size="icon">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </DeleteConfirmationDialog>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -208,14 +216,18 @@ export const BuyerPage = () => {
                                         )}
                                     </CardContent>
                                     <CardFooter className="flex justify-end gap-2">
-                                        <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data pembeli "${data.name}"?`}>
-                                            <Button variant="destructive" size="icon">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </DeleteConfirmationDialog>
+                                        {canWrite && (
+                                            <>
+                                                <Button variant="outline" size="icon" onClick={() => openEditDialog(data)}>
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <DeleteConfirmationDialog onConfirm={() => handleDelete(data.id)} title={`Hapus data pembeli "${data.name}"?`}>
+                                                    <Button variant="destructive" size="icon">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </DeleteConfirmationDialog>
+                                            </>
+                                        )}
                                     </CardFooter>
                                 </Card>
                             ))}

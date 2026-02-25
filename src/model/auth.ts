@@ -15,6 +15,8 @@ export interface BaseSingleResponse {
     message: string;
 }
 
+export type UserRole = 'root' | 'admin' | 'staff';
+
 /**
  * Represents the authenticated user's data.
  */
@@ -22,6 +24,7 @@ export interface UserData {
     id: string;
     nama: string;
     username: string;
+    role: UserRole;
 }
 
 /**
@@ -30,4 +33,3 @@ export interface UserData {
 export interface SingleUserResponse extends BaseSingleResponse {
     data: UserData;
 }
-

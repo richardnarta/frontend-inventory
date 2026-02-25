@@ -8,6 +8,7 @@ import {
   LogOut,
   Loader2,
   LayoutList,
+  Users,
 } from "lucide-react";
 import {
   Button,
@@ -26,6 +27,7 @@ import {
   SidebarProvider,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   BrowserRouter,
@@ -43,33 +45,50 @@ import { SalesTransactionPage } from "@/pages/Sales";
 import { SupplierPage } from "@/pages/Supplier";
 import { PurchaseTransactionPage } from "@/pages/Purchase";
 import { LoginPage } from "@/pages/Login";
+import { UserManagementPage } from "@/pages/UserManagement";
 import { getProfile, logout } from "@/service/auth";
+import { AuthProvider, useAuthContext } from "@/context/AuthContext";
+import { useRole } from "@/hooks/use-role";
+import type { UserData } from "@/model/auth";
 
 // -------------------------------
-// Sidebar menu configuration
+// Sidebar menu configuration (base)
 // -------------------------------
-const navGroup = [
-  {
-    name: "Inventory",
-    items: [
-      { name: "Data Barang", icon: <LayoutList className="h-5 w-5" />, path: "/inventory" },
-    ],
-  },
-  {
-    name: "Transaksi",
-    items: [
-      { name: "Pembelian", icon: <ShoppingCart className="h-5 w-5" />, path: "/purchase" },
-      { name: "Penjualan", icon: <Tag className="h-5 w-5" />, path: "/sales" },
-    ],
-  },
-  {
-    name: "Master Data",
-    items: [
-      { name: "Data Pembeli", icon: <HandCoins className="h-5 w-5" />, path: "/buyer" },
-      { name: "Data Supplier", icon: <Package className="h-5 w-5" />, path: "/supplier" },
-    ],
-  },
-];
+const inventoryGroup = {
+  name: "Inventory",
+  items: [
+    { name: "Data Barang", icon: <LayoutList className="h-5 w-5" />, path: "/inventory" },
+  ],
+};
+
+const transaksiGroup = {
+  name: "Transaksi",
+  items: [
+    { name: "Pembelian", icon: <ShoppingCart className="h-5 w-5" />, path: "/purchase" },
+    { name: "Penjualan", icon: <Tag className="h-5 w-5" />, path: "/sales" },
+  ],
+};
+
+const masterGroup = {
+  name: "Master Data",
+  items: [
+    { name: "Data Pembeli", icon: <HandCoins className="h-5 w-5" />, path: "/buyer" },
+    { name: "Data Supplier", icon: <Package className="h-5 w-5" />, path: "/supplier" },
+  ],
+};
+
+const manajemenGroup = {
+  name: "Manajemen",
+  items: [
+    { name: "Manajemen User", icon: <Users className="h-5 w-5" />, path: "/users" },
+  ],
+};
+
+const roleBadgeStyle: Record<string, string> = {
+  root: "bg-purple-100 text-purple-700 border-purple-300",
+  admin: "bg-blue-100 text-blue-700 border-blue-300",
+  staff: "bg-gray-100 text-gray-600 border-gray-300",
+};
 
 // -------------------------------
 // Protected Layout (for authenticated users)
@@ -77,6 +96,14 @@ const navGroup = [
 function AppLayout({ onLogout }: { onLogout: () => void }) {
   const navigate = useNavigate();
   const { open, isMobile, setOpenMobile } = useSidebar();
+  const { canWrite, user } = useRole();
+
+  const navGroups = [
+    inventoryGroup,
+    transaksiGroup,
+    masterGroup,
+    ...(canWrite ? [manajemenGroup] : []),
+  ];
 
   const handleNavLinkClick = () => {
     if (isMobile) setOpenMobile(false);
@@ -109,7 +136,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
               </h1>
             </SidebarHeader>
 
-            {navGroup.map((group) => (
+            {navGroups.map((group) => (
               <SidebarGroup className="py-0" key={group.name}>
                 <SidebarGroupLabel>{group.name}</SidebarGroupLabel>
                 <SidebarGroupContent>
@@ -143,7 +170,22 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
             ))}
           </div>
 
-          <SidebarFooter>
+          <SidebarFooter className="gap-1 pb-4">
+            {/* User info pill */}
+            {open && user && (
+              <div className="px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 mb-1">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user.nama}</p>
+                  <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={cn("shrink-0 capitalize text-xs", roleBadgeStyle[user.role] ?? "")}
+                >
+                  {user.role}
+                </Badge>
+              </div>
+            )}
             <Button
               variant="ghost"
               className={cn(
@@ -167,6 +209,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           <Route path="/sales" element={<SalesTransactionPage />} />
           <Route path="/buyer" element={<BuyerPage />} />
           <Route path="/supplier" element={<SupplierPage />} />
+          {canWrite && <Route path="/users" element={<UserManagementPage />} />}
           <Route path="/" element={<Navigate to="/inventory" replace />} />
           <Route path="/login" element={<Navigate to="/inventory" replace />} />
         </Routes>
@@ -184,6 +227,7 @@ function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const navigate = useNavigate();
+  const { setUser, clearUser } = useAuthContext();
 
   const authCheckRef = useRef(false);
 
@@ -195,10 +239,12 @@ function AppContent() {
 
     const checkAuth = async () => {
       try {
-        await getProfile();
+        const res = await getProfile();
+        setUser(res.data as UserData);
         setIsAuthenticated(true);
       } catch {
         setIsAuthenticated(false);
+        clearUser();
         if (window.location.pathname !== '/login') {
           navigate("/login", { replace: true });
         }
@@ -207,13 +253,18 @@ function AppContent() {
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, setUser, clearUser]);
 
   const handleLoginSuccess = () => {
+    // After a successful login, immediately mark as authenticated and navigate.
+    // Then lazily fetch user profile to populate the AuthContext.
     setIsAuthenticated(true);
     navigate('/inventory', { replace: true });
+    // Populate context in background — if this fails we still have a valid session
+    getProfile()
+      .then((res) => setUser(res.data as UserData))
+      .catch(() => { /* profile fetch failure is non-fatal */ });
   };
-
 
   if (isCheckingAuth) {
     return (
@@ -230,7 +281,7 @@ function AppContent() {
       ) : (
         <Route path="/*" element={
           <SidebarProvider>
-            <AppLayout onLogout={() => setIsAuthenticated(false)} />
+            <AppLayout onLogout={() => { setIsAuthenticated(false); clearUser(); }} />
           </SidebarProvider>
         } />
       )}
@@ -245,7 +296,9 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
       <Toaster richColors />
     </BrowserRouter>
   );
