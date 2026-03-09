@@ -56,7 +56,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-green-600 dark:text-green-400">HidupBaru</CardTitle>
+          <CardTitle className="text-2xl font-bold text-orange-600 dark:text-orange-400">Optik Baru</CardTitle>
           <CardDescription>Masukkan kredensial anda untuk mengakses dashboard.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -101,7 +101,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
           </CardContent>
           <CardFooter>
-            <Button className="bg-green-400 font-semibold hover:bg-green-500 text-gray-900 w-full mt-12" type="submit" disabled={isLoading}>
+            <Button className="bg-orange-400 font-semibold hover:bg-orange-500 text-gray-900 w-full mt-12" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (

@@ -153,21 +153,27 @@ export const CreateUpdateInventoryFormDialog = ({
                             <SelectValue placeholder="Pilih satuan" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Bal">BAL (Bal)</SelectItem>
-                            <SelectItem value="Buah">BH (Buah)</SelectItem>
-                            <SelectItem value="Batang">BTG (Batang)</SelectItem>
-                            <SelectItem value="Dus">DUS (Dus)</SelectItem>
-                            <SelectItem value="Gulung">GL (Gulung)</SelectItem>
-                            <SelectItem value="Kilogram">KG (Kilogram)</SelectItem>
-                            <SelectItem value="Kotak">KTK (Kotak)</SelectItem>
-                            <SelectItem value="Lembar">LBR (Lembar)</SelectItem>
-                            <SelectItem value="Lusin">LS (Lusin)</SelectItem>
-                            <SelectItem value="Meter">M (Meter)</SelectItem>
-                            <SelectItem value="Ons">ONS (Ons)</SelectItem>
-                            <SelectItem value="Pak">PAK (Pak)</SelectItem>
-                            <SelectItem value="Pcs">PCS (Pcs)</SelectItem>
-                            <SelectItem value="Pasang">PS (Pasang)</SelectItem>
-                            <SelectItem value="Sak">SAK (Sak)</SelectItem>
+                            {product ? (
+                                <>
+                                    <SelectItem value="Bal">BAL (Bal)</SelectItem>
+                                    <SelectItem value="Batang">BTG (Batang)</SelectItem>
+                                    <SelectItem value="Buah">BH (Buah)</SelectItem>
+                                    <SelectItem value="Dus">DUS (Dus)</SelectItem>
+                                    <SelectItem value="Gulung">GL (Gulung)</SelectItem>
+                                    <SelectItem value="Kilogram">KG (Kilogram)</SelectItem>
+                                    <SelectItem value="Kotak">KTK (Kotak)</SelectItem>
+                                    <SelectItem value="Lembar">LBR (Lembar)</SelectItem>
+                                    <SelectItem value="Lusin">LS (Lusin)</SelectItem>
+                                    <SelectItem value="Meter">M (Meter)</SelectItem>
+                                    <SelectItem value="Ons">ONS (Ons)</SelectItem>
+                                    <SelectItem value="Pak">PAK (Pak)</SelectItem>
+                                    <SelectItem value="Pasang">PS (Pasang)</SelectItem>
+                                    <SelectItem value="Pcs">PCS (Pcs)</SelectItem>
+                                    <SelectItem value="Sak">SAK (Sak)</SelectItem>
+                                </>
+                            ) : (
+                                <SelectItem value="Pcs">PCS (Pcs)</SelectItem>
+                            )}
                         </SelectContent>
                     </Select>
                 </div>

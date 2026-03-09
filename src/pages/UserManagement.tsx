@@ -92,7 +92,7 @@ export const UserManagementPage = () => {
             <PageHeading headingTitle="Manajemen User" actionButton={() => { }} />
 
             <div className="flex justify-end mb-4">
-                <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAdd}>
+                <Button className="bg-orange-400 hover:bg-orange-500 text-gray-900" onClick={openAdd}>
                     <Plus className="mr-2 h-4 w-4" /> Tambah User
                 </Button>
             </div>
@@ -109,7 +109,7 @@ export const UserManagementPage = () => {
                 <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-green-200 hover:bg-green-200">
+                            <TableRow className="bg-orange-200 hover:bg-orange-200">
                                 <TableHead className="pl-6 py-4">Nama</TableHead>
                                 <TableHead>Username</TableHead>
                                 <TableHead className="text-center">Role</TableHead>

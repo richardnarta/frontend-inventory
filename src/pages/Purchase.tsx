@@ -348,7 +348,7 @@ export const PurchaseTransactionPage = () => {
                             <RotateCcw className="mr-2 h-4 w-4" />Reset Filter
                         </Button>
                         {canWrite && (
-                            <Button className="bg-green-400 hover:bg-green-500 text-gray-900" onClick={openAddDialog}>
+                            <Button className="bg-orange-400 hover:bg-orange-500 text-gray-900" onClick={openAddDialog}>
                                 <Plus className="mr-2 h-4 w-4" />Tambah Pembelian
                             </Button>
                         )}
@@ -358,8 +358,8 @@ export const PurchaseTransactionPage = () => {
 
             {/* Bulk Actions Bar */}
             {canWrite && selectedIds.length > 0 && (
-                <div className="bg-green-50 animate-in fade-in slide-in-from-top-4 border border-green-200 p-3 rounded-xl shadow-sm mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="text-green-800 font-medium whitespace-nowrap">
+                <div className="bg-orange-50 animate-in fade-in slide-in-from-top-4 border border-orange-200 p-3 rounded-xl shadow-sm mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="text-orange-800 font-medium whitespace-nowrap">
                         {selectedIds.length} transaksi terpilih
                     </div>
                     <div className="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -409,7 +409,7 @@ export const PurchaseTransactionPage = () => {
                         <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-green-200 hover:bg-green-200 *:first:rounded-tl-lg *:last:rounded-tr-lg">
+                                    <TableRow className="bg-orange-200 hover:bg-orange-200 *:first:rounded-tl-lg *:last:rounded-tr-lg">
                                         {canWrite && (
                                             <TableHead className="w-12 pl-6 py-4"></TableHead>
                                         )}
@@ -490,7 +490,7 @@ export const PurchaseTransactionPage = () => {
                                 const itemCount = data.items?.length || 0;
 
                                 return (
-                                    <Card key={data.id} className={selectedIds.includes(data.id) ? "border-green-500 bg-green-50" : ""}>
+                                    <Card key={data.id} className={selectedIds.includes(data.id) ? "border-orange-500 bg-orange-50" : ""}>
                                         <CardHeader className="pb-2">
                                             <CardTitle className="flex justify-between items-start gap-4 text-base">
                                                 <div className="flex gap-3 items-start">

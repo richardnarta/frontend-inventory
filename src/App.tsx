@@ -133,11 +133,11 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
             <SidebarHeader className="px-4 pt-4 pb-2 text-left">
               <h1
                 className={cn(
-                  "font-bold text-green-600 dark:text-green-400",
+                  "font-bold text-orange-600 dark:text-orange-400",
                   !open && !isMobile ? "text-xl" : "text-2xl"
                 )}
               >
-                {!open && !isMobile ? "HB" : "HidupBaru"}
+                {!open && !isMobile ? "OB" : "Optik Baru"}
               </h1>
             </SidebarHeader>
 
@@ -160,7 +160,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
                               "w-full gap-2",
                               open ? "justify-start" : "justify-center",
                               isActive &&
-                              "bg-green-200 text-dark hover:bg-green-300 dark:bg-green-800 dark:text-green-50 dark:hover:bg-green-900"
+                              "bg-orange-200 text-dark hover:bg-orange-300 dark:bg-orange-800 dark:text-orange-50 dark:hover:bg-orange-900"
                             )
                           }
                         >

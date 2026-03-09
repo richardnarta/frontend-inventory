@@ -150,7 +150,7 @@ export function UserFormDialog({
                     </Button>
                     <Button
                         type="submit"
-                        className="bg-green-400 hover:bg-green-500 text-gray-900"
+                        className="bg-orange-400 hover:bg-orange-500 text-gray-900"
                         disabled={isSaving}
                     >
                         {isSaving ? (
