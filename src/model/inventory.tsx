@@ -1,7 +1,7 @@
 import { type BaseListResponse } from "./common";
 
 // Quantity units enum matching backend
-export type QuantityUnit = "Batang" | "Dus" | "Kilogram" | "Kotak" | "Lembar" | "Meter" | "Pcs" | "Sak" | "Bal" | "Pak" | "Lusin" | "Ons";
+export type QuantityUnit = "Bal" | "Batang" | "Buah" | "Dus" | "Gulung" | "Kilogram" | "Kotak" | "Lembar" | "Lusin" | "Meter" | "Ons" | "Pak" | "Pasang" | "Pcs" | "Sak";
 
 export interface InventoryData {
   kode_barang: string;  // Primary key - item code
@@ -47,4 +47,5 @@ export interface BatchUploadResponse {
   skipped_rows: number;
   new_units_detected: string[];
   duplicate_skipped: number;
+  errors?: any[];
 }

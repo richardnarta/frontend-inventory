@@ -98,9 +98,14 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   const { open, isMobile, setOpenMobile } = useSidebar();
   const { canWrite, user } = useRole();
 
+  // Staff can only see Penjualan, not Pembelian
+  const transaksiGroupFiltered = canWrite
+    ? transaksiGroup
+    : { ...transaksiGroup, items: transaksiGroup.items.filter((item) => item.path !== "/purchase") };
+
   const navGroups = [
     inventoryGroup,
-    transaksiGroup,
+    transaksiGroupFiltered,
     masterGroup,
     ...(canWrite ? [manajemenGroup] : []),
   ];
@@ -257,13 +262,18 @@ function AppContent() {
 
   const handleLoginSuccess = () => {
     // After a successful login, immediately mark as authenticated and navigate.
-    // Then lazily fetch user profile to populate the AuthContext.
     setIsAuthenticated(true);
     navigate('/inventory', { replace: true });
-    // Populate context in background — if this fails we still have a valid session
+    // Populate context in background
     getProfile()
-      .then((res) => setUser(res.data as UserData))
-      .catch(() => { /* profile fetch failure is non-fatal */ });
+      .then((res) => {
+        if (res && res.data) {
+          setUser(res.data as UserData);
+        }
+      })
+      .catch((e) => {
+        console.warn("Profile fetch after login failed, session may still be valid:", e);
+      });
   };
 
   if (isCheckingAuth) {

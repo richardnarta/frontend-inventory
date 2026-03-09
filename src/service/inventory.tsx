@@ -58,17 +58,32 @@ export const updateInventory = async (kode_barang: string, productData: Inventor
     }
 };
 
-export const deleteInventoryById = async (kode_barang: string) => {
+export const deleteInventoryByKode = async (kodeBarang: string) => {
     try {
-        await api.delete(`/v1/inventory/${kode_barang}`);
-        return { message: 'Inventory item deleted successfully' };
+        await api.delete(`/v1/inventory/${kodeBarang}`);
+        return { message: 'Barang berhasil dihapus.' };
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
-            throw new Error(error.response.data.detail || 'Failed to delete inventory item');
+            throw new Error(error.response.data.message || error.response.data.detail || 'Gagal menghapus barang.');
         }
-        throw new Error('An unexpected error occurred');
+        throw new Error('Gagal menghapus barang.');
     }
 };
+
+export const bulkDeleteInventory = async (ids?: string[], deleteAll = false) => {
+    try {
+        const response = await api.delete('/v1/inventory/bulk/delete', {
+            data: { ids: ids ?? null, delete_all: deleteAll },
+        });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            throw new Error(error.response.data.message || error.response.data.detail || 'Gagal menghapus data barang.');
+        }
+        throw new Error('Gagal menghapus data barang.');
+    }
+};
+
 
 export const batchUploadInventory = async (file: File): Promise<BatchUploadResponse> => {
     try {

@@ -1,10 +1,10 @@
 import axios from "axios";
 import { api } from "@/lib/utils";
-import { 
-    type BuyerListResponse, 
-    type BuyerCreatePayload, 
-    type BuyerData, 
-    type BuyerUpdatePayload 
+import {
+  type BuyerListResponse,
+  type BuyerCreatePayload,
+  type BuyerData,
+  type BuyerUpdatePayload
 } from "@/model/buyer";
 
 
@@ -54,6 +54,20 @@ export const deleteBuyerById = async (id: number) => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       throw new Error(error.response.data.message || 'Gagal menghapus data pembeli.');
+    }
+    throw new Error('Gagal menghapus data pembeli.');
+  }
+};
+
+export const bulkDeleteBuyers = async (ids?: number[], deleteAll = false) => {
+  try {
+    const response = await api.delete('/v1/buyer/bulk/delete', {
+      data: { ids: ids ?? null, delete_all: deleteAll },
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || error.response.data.detail || 'Gagal menghapus data pembeli.');
     }
     throw new Error('Gagal menghapus data pembeli.');
   }

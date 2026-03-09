@@ -9,8 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Format Helper
-export const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { 
-  style: 'currency', currency: 'IDR', minimumFractionDigits: 0 
+export const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', {
+  style: 'currency', currency: 'IDR', minimumFractionDigits: 0
 }).format(amount);
 
 export const formatNumber = (
@@ -59,11 +59,11 @@ export const formatDate = (dateInput: Date | string | number): string => {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export const api = axios.create({
-    baseURL: API_BASE_URL,
-    withCredentials: true,
-    headers: {
-        'Content-Type': 'application/json'
-    }
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 api.interceptors.response.use(
@@ -72,7 +72,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (
-      error.response?.status === 401 && 
+      error.response?.status === 401 &&
       !originalRequest._retry &&
       originalRequest.url !== '/v1/auth/refresh' &&
       originalRequest.url !== '/v1/auth/login'

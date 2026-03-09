@@ -61,3 +61,17 @@ export const deleteSupplierById = async (id: number) => {
     throw new Error('Gagal menghapus data supplier.');
   }
 };
+
+export const bulkDeleteSuppliers = async (ids?: number[], deleteAll = false) => {
+  try {
+    const response = await api.delete('/v1/supplier/bulk/delete', {
+      data: { ids: ids ?? null, delete_all: deleteAll },
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || error.response.data.detail || 'Gagal menghapus data supplier.');
+    }
+    throw new Error('Gagal menghapus data supplier.');
+  }
+};

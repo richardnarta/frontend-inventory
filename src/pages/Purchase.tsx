@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { RotateCcw, Plus, Trash2, Loader2, Calendar as CalendarIcon, FileDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { RotateCcw, Plus, Trash2, Loader2, Calendar as CalendarIcon, FileDown, AlertTriangle } from 'lucide-react';
 import { format } from "date-fns";
 import { type DateRange } from "react-day-picker";
 import * as XLSX from 'xlsx';
@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Dialog } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { keepPreviousData, useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -24,7 +25,7 @@ import { ViewItemsDialog } from '@/components/ViewItemsDialog';
 
 import { getSuppliers } from '@/service/supplier';
 import { getInventories } from '@/service/inventory';
-import { createPurchaseTransaction, deletePurchaseTransactionById, getPurchaseTransactions } from '@/service/purchase_transaction';
+import { createPurchaseTransaction, deletePurchaseTransactionById, bulkDeletePurchaseTransactions, getPurchaseTransactions } from '@/service/purchase_transaction';
 import type { PurchaseTransactionCreateRequest } from '@/model/purchase_transaction';
 import { mapToDropdownItems } from '@/lib/mapper';
 import { cn, formatCurrency, formatDate, formatNumber } from '@/lib/utils';
@@ -33,8 +34,10 @@ import { useRole } from '@/hooks/use-role';
 export const PurchaseTransactionPage = () => {
     const { canWrite } = useRole();
     const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [viewItemsDialog, setViewItemsDialog] = useState<{ open: boolean; transactionId: number | null }>({
         open: false,
         transactionId: null
@@ -45,8 +48,12 @@ export const PurchaseTransactionPage = () => {
     const [inventoryId, setInventoryId] = useState('');
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-    const itemsPerPage = 10;
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        setCurrentPage(1);
+        setSelectedIds([]);
+    }, [supplierId, inventoryId, dateRange, itemsPerPage]);
 
     const formattedDateRange = {
         start_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
@@ -54,7 +61,7 @@ export const PurchaseTransactionPage = () => {
     };
 
     const { data: transactionData, isLoading, error } = useQuery({
-        queryKey: ['purchase-transactions', { supplierId, inventoryId, ...formattedDateRange, currentPage }],
+        queryKey: ['purchase-transactions', { supplierId, inventoryId, ...formattedDateRange, page: currentPage, limit: itemsPerPage }],
         queryFn: () => getPurchaseTransactions({
             supplier_id: supplierId ? parseInt(supplierId) : undefined,
             inventory_id: inventoryId || undefined,
@@ -89,8 +96,20 @@ export const PurchaseTransactionPage = () => {
             toast.success(`Transaksi pembelian berhasil dihapus.`);
             queryClient.invalidateQueries({ queryKey: ['purchase-transactions'] });
             queryClient.invalidateQueries({ queryKey: ['inventories'] });
+            setSelectedIds([]);
         },
         onError: (error) => { toast.error(error.message); },
+    });
+
+    const bulkDeleteMutation = useMutation({
+        mutationFn: ({ ids, deleteAll }: { ids?: number[], deleteAll: boolean }) => bulkDeletePurchaseTransactions(ids, deleteAll),
+        onSuccess: (data) => {
+            toast.success(data.message || `Transaksi pembelian berhasil dihapus.`);
+            queryClient.invalidateQueries({ queryKey: ['purchase-transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['inventories'] });
+            setSelectedIds([]);
+        },
+        onError: (error: any) => { toast.error(error.message || `Gagal menghapus data.`); },
     });
 
     const handleSave = async (data: PurchaseTransactionCreateRequest) => {
@@ -105,16 +124,37 @@ export const PurchaseTransactionPage = () => {
         setDateRange(undefined);
     };
 
-    const openAddDialog = () => {
-        setIsFormOpen(true);
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        bulkDeleteMutation.mutate({ ids: selectedIds, deleteAll: false });
     };
 
-    const closeDialog = () => {
-        setIsFormOpen(false);
+    const handleDeleteAll = () => {
+        bulkDeleteMutation.mutate({ deleteAll: true });
     };
+
+    const handleSelectAllOnPage = () => {
+        const pageIds = transactions.map(t => t.id);
+        const allSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.includes(id));
+        if (allSelected) return;
+
+        setSelectedIds(prev => Array.from(new Set([...prev, ...pageIds])));
+    };
+
+    const handleSelectOne = (id: number, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+        }
+    };
+
+    const openAddDialog = () => setIsFormOpen(true);
+    const closeDialog = () => setIsFormOpen(false);
 
     const transactions = transactionData?.items ?? [];
     const totalPages = transactionData?.total_pages ?? 1;
+    const totalCount = transactionData?.item_count ?? 0;
 
     const handleExport = async () => {
         if (typeof XLSX === 'undefined') {
@@ -159,17 +199,15 @@ export const PurchaseTransactionPage = () => {
                 "Total Pembelian"
             ];
 
-            // Build data with one row per item
             const dataToExport: any[][] = [];
             const merges: any[] = [];
-            let currentRow = 3; // Starting row (after title + blank + header)
+            let currentRow = 3;
 
             allTransactionsData.items.forEach(transaction => {
                 const items = transaction.items || [];
                 const itemCount = items.length || 1;
 
                 if (items.length === 0) {
-                    // Empty transaction - single row with no item details
                     dataToExport.push([
                         `#${transaction.id}`,
                         formatDate(transaction.transaction_date),
@@ -182,10 +220,9 @@ export const PurchaseTransactionPage = () => {
                     ]);
                     currentRow++;
                 } else {
-                    // Transaction with items - one row per item
                     items.forEach((item, itemIndex) => {
                         dataToExport.push([
-                            itemIndex === 0 ? `#${transaction.id}` : '', // Only first row shows transaction ID
+                            itemIndex === 0 ? `#${transaction.id}` : '',
                             itemIndex === 0 ? formatDate(transaction.transaction_date) : '',
                             itemIndex === 0 ? (transaction.supplier?.name || '-') : '',
                             item.inventory?.nama_barang || item.inventory_id,
@@ -196,15 +233,10 @@ export const PurchaseTransactionPage = () => {
                         ]);
                     });
 
-                    // Merge cells for transaction-level fields (No Transaksi, Tanggal, Supplier, Total Pembelian)
                     if (itemCount > 1) {
-                        // Merge No. Transaksi (column 0)
                         merges.push({ s: { r: currentRow, c: 0 }, e: { r: currentRow + itemCount - 1, c: 0 } });
-                        // Merge Tanggal (column 1)
                         merges.push({ s: { r: currentRow, c: 1 }, e: { r: currentRow + itemCount - 1, c: 1 } });
-                        // Merge Supplier (column 2)
                         merges.push({ s: { r: currentRow, c: 2 }, e: { r: currentRow + itemCount - 1, c: 2 } });
-                        // Merge Total Pembelian (column 7)
                         merges.push({ s: { r: currentRow, c: 7 }, e: { r: currentRow + itemCount - 1, c: 7 } });
                     }
 
@@ -220,21 +252,20 @@ export const PurchaseTransactionPage = () => {
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
-            // Merge title row across all columns
             worksheet['!merges'] = [
                 { s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } },
                 ...merges
             ];
 
             worksheet['!cols'] = [
-                { wch: 15 },  // No. Transaksi
-                { wch: 15 },  // Tanggal
-                { wch: 25 },  // Supplier
-                { wch: 30 },  // Nama Barang
-                { wch: 12 },  // Jumlah
-                { wch: 15 },  // Harga Satuan
-                { wch: 15 },  // Total Harga
-                { wch: 18 }   // Total Pembelian
+                { wch: 15 },
+                { wch: 15 },
+                { wch: 25 },
+                { wch: 30 },
+                { wch: 12 },
+                { wch: 15 },
+                { wch: 15 },
+                { wch: 18 }
             ];
 
             const workbook = XLSX.utils.book_new();
@@ -325,6 +356,33 @@ export const PurchaseTransactionPage = () => {
                 </div>
             </div>
 
+            {/* Bulk Actions Bar */}
+            {canWrite && selectedIds.length > 0 && (
+                <div className="bg-green-50 animate-in fade-in slide-in-from-top-4 border border-green-200 p-3 rounded-xl shadow-sm mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="text-green-800 font-medium whitespace-nowrap">
+                        {selectedIds.length} transaksi terpilih
+                    </div>
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedIds([])} className="bg-white hover:bg-gray-100 text-gray-700">
+                            Batal Pilih
+                        </Button>
+                        <DeleteConfirmationDialog onConfirm={handleBulkDelete} title={`Hapus ${selectedIds.length} transaksi terpilih? (Termasuk membatalkan stok pembelian)`}>
+                            <Button variant="destructive" size="sm" disabled={bulkDeleteMutation.isPending}>
+                                {bulkDeleteMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                Hapus Terpilih
+                            </Button>
+                        </DeleteConfirmationDialog>
+
+                        <DeleteConfirmationDialog onConfirm={handleDeleteAll} title={`PERINGATAN! Anda akan menghapus SEMUA data transaksi pembelian (${totalCount} item). Semua penyesuaian stok dari semua pembelian akan dikembalikan. Lanjutkan?`}>
+                            <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700" disabled={bulkDeleteMutation.isPending}>
+                                <AlertTriangle className="mr-2 h-4 w-4" />
+                                Hapus Semua Data Kosongkan
+                            </Button>
+                        </DeleteConfirmationDialog>
+                    </div>
+                </div>
+            )}
+
             {isLoading ? (
                 <div className="w-full h-96 flex justify-center items-center">
                     <Loader2 className="h-8 w-8 animate-spin" />
@@ -341,17 +399,27 @@ export const PurchaseTransactionPage = () => {
                 ) : (
                     <div>
                         {/* Desktop Table */}
+                        {canWrite && (
+                            <div className="mb-4">
+                                <Button variant="outline" size="sm" onClick={handleSelectAllOnPage} className="bg-white shadow-sm border-gray-300">
+                                    Pilih Semua di Halaman
+                                </Button>
+                            </div>
+                        )}
                         <div className="bg-white dark:bg-gray-950 border rounded-xl shadow-sm overflow-hidden hidden md:block">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-green-200 hover:bg-green-200">
-                                        <TableHead className="pl-6 py-4">No. </TableHead>
-                                        <TableHead>Tanggal</TableHead>
-                                        <TableHead>Supplier</TableHead>
-                                        <TableHead className="text-center">Jenis Barang</TableHead>
-                                        <TableHead className="text-right">Total Jumlah</TableHead>
-                                        <TableHead className="text-right">Total Harga</TableHead>
-                                        <TableHead className="text-center">Aksi</TableHead>
+                                    <TableRow className="bg-green-200 hover:bg-green-200 *:first:rounded-tl-lg *:last:rounded-tr-lg">
+                                        {canWrite && (
+                                            <TableHead className="w-12 pl-6 py-4"></TableHead>
+                                        )}
+                                        <TableHead className={canWrite ? "py-4" : "pl-6 py-4"}>No. </TableHead>
+                                        <TableHead className="py-4">Tanggal</TableHead>
+                                        <TableHead className="py-4">Supplier</TableHead>
+                                        <TableHead className="text-center py-4">Jenis Barang</TableHead>
+                                        <TableHead className="text-right py-4">Total Jumlah</TableHead>
+                                        <TableHead className="text-right py-4">Total Harga</TableHead>
+                                        <TableHead className="text-center py-4">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -360,8 +428,17 @@ export const PurchaseTransactionPage = () => {
                                         const itemCount = data.items?.length || 0;
 
                                         return (
-                                            <TableRow key={data.id}>
-                                                <TableCell className='pl-6 font-medium'>#{data.id}</TableCell>
+                                            <TableRow key={data.id} data-state={selectedIds.includes(data.id) ? "selected" : undefined}>
+                                                {canWrite && (
+                                                    <TableCell className="pl-6">
+                                                        <Checkbox
+                                                            checked={selectedIds.includes(data.id)}
+                                                            onCheckedChange={(checked: boolean | "indeterminate") => handleSelectOne(data.id, checked === true)}
+                                                            aria-label={`Pilih Transaksi #${data.id}`}
+                                                        />
+                                                    </TableCell>
+                                                )}
+                                                <TableCell className={canWrite ? 'font-medium' : 'font-medium pl-6 py-4'}>#{data.id}</TableCell>
                                                 <TableCell>{formatDate(data.transaction_date)}</TableCell>
                                                 <TableCell>{data.supplier?.name || '-'}</TableCell>
                                                 <TableCell className="text-center">{itemCount} jenis</TableCell>
@@ -379,7 +456,7 @@ export const PurchaseTransactionPage = () => {
                                                         {canWrite && (
                                                             <DeleteConfirmationDialog
                                                                 onConfirm={() => handleDelete(data.id)}
-                                                                title={`Hapus transaksi pembelian #${data.id}?`}
+                                                                title={`Hapus transaksi pembelian #${data.id}? (Stok akan dikembalikan)`}
                                                             >
                                                                 <Button variant="destructive" size="icon">
                                                                     <Trash2 className="h-4 w-4" />
@@ -394,7 +471,7 @@ export const PurchaseTransactionPage = () => {
                                 </TableBody>
                                 <TableFooter>
                                     <TableRow>
-                                        <TableCell colSpan={5} className="font-bold text-right py-4">
+                                        <TableCell colSpan={canWrite ? 6 : 5} className="font-bold text-right py-4">
                                             Total Pembelian
                                         </TableCell>
                                         <TableCell className="text-right font-bold">
@@ -413,16 +490,28 @@ export const PurchaseTransactionPage = () => {
                                 const itemCount = data.items?.length || 0;
 
                                 return (
-                                    <Card key={data.id}>
-                                        <CardHeader>
-                                            <CardTitle className="flex justify-between items-center text-base">
-                                                <span className="break-words">#{data.id} - {data.supplier?.name || '-'}</span>
-                                                <span className="text-sm font-normal text-gray-500 whitespace-nowrap ml-2">
-                                                    {formatDate(data.transaction_date)}
-                                                </span>
+                                    <Card key={data.id} className={selectedIds.includes(data.id) ? "border-green-500 bg-green-50" : ""}>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="flex justify-between items-start gap-4 text-base">
+                                                <div className="flex gap-3 items-start">
+                                                    {canWrite && (
+                                                        <div className="pt-1">
+                                                            <Checkbox
+                                                                checked={selectedIds.includes(data.id)}
+                                                                onCheckedChange={(checked: boolean | "indeterminate") => handleSelectOne(data.id, checked === true)}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <span className="break-words">#{data.id} - {data.supplier?.name || '-'}</span>
+                                                        <div className="text-sm font-normal text-gray-500 ml-0 mt-1 inline-block">
+                                                            {formatDate(data.transaction_date)}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent className="space-y-2 text-sm">
+                                        <CardContent className="space-y-2 text-sm pt-2">
                                             <div className="grid grid-cols-2 gap-x-4">
                                                 <div className="font-semibold text-gray-500">Jenis Barang</div>
                                                 <div className="text-right">{itemCount} jenis</div>
@@ -436,7 +525,7 @@ export const PurchaseTransactionPage = () => {
                                                 <div className="text-right font-bold">{formatCurrency(data.total_amount)}</div>
                                             </div>
                                         </CardContent>
-                                        <CardFooter className="flex justify-end gap-2">
+                                        <CardFooter className="flex justify-end gap-2 pt-0 pb-4">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -464,6 +553,9 @@ export const PurchaseTransactionPage = () => {
                             currentPage={currentPage}
                             totalPages={totalPages}
                             onPageChange={setCurrentPage}
+                            itemsPerPage={itemsPerPage}
+                            onItemsPerPageChange={setItemsPerPage}
+                            totalItems={totalCount}
                             className='mt-6'
                         />
                     </div>
@@ -487,6 +579,8 @@ export const PurchaseTransactionPage = () => {
                     items={transactions.find(t => t.id === viewItemsDialog.transactionId)?.items || []}
                     title={`Detail Transaksi Pembelian #${viewItemsDialog.transactionId}`}
                     totalAmount={transactions.find(t => t.id === viewItemsDialog.transactionId)?.total_amount || 0}
+                    partnerLabel="Supplier:"
+                    partnerName={transactions.find(t => t.id === viewItemsDialog.transactionId)?.supplier?.name || '-'}
                 />
             )}
         </Dialog>

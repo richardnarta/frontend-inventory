@@ -153,18 +153,21 @@ export const CreateUpdateInventoryFormDialog = ({
                             <SelectValue placeholder="Pilih satuan" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Pcs">Pcs</SelectItem>
-                            <SelectItem value="Dus">Dus</SelectItem>
-                            <SelectItem value="Kotak">Kotak</SelectItem>
-                            <SelectItem value="Batang">Batang</SelectItem>
-                            <SelectItem value="Bal">Bal</SelectItem>
-                            <SelectItem value="Pak">Pak</SelectItem>
-                            <SelectItem value="Sak">Sak</SelectItem>
-                            <SelectItem value="Lembar">Lembar</SelectItem>
-                            <SelectItem value="Meter">Meter</SelectItem>
-                            <SelectItem value="Kilogram">Kilogram</SelectItem>
-                            <SelectItem value="Lusin">Lusin</SelectItem>
-                            <SelectItem value="Ons">Ons</SelectItem>
+                            <SelectItem value="Bal">BAL (Bal)</SelectItem>
+                            <SelectItem value="Buah">BH (Buah)</SelectItem>
+                            <SelectItem value="Batang">BTG (Batang)</SelectItem>
+                            <SelectItem value="Dus">DUS (Dus)</SelectItem>
+                            <SelectItem value="Gulung">GL (Gulung)</SelectItem>
+                            <SelectItem value="Kilogram">KG (Kilogram)</SelectItem>
+                            <SelectItem value="Kotak">KTK (Kotak)</SelectItem>
+                            <SelectItem value="Lembar">LBR (Lembar)</SelectItem>
+                            <SelectItem value="Lusin">LS (Lusin)</SelectItem>
+                            <SelectItem value="Meter">M (Meter)</SelectItem>
+                            <SelectItem value="Ons">ONS (Ons)</SelectItem>
+                            <SelectItem value="Pak">PAK (Pak)</SelectItem>
+                            <SelectItem value="Pcs">PCS (Pcs)</SelectItem>
+                            <SelectItem value="Pasang">PS (Pasang)</SelectItem>
+                            <SelectItem value="Sak">SAK (Sak)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

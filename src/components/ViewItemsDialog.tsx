@@ -3,7 +3,10 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -22,9 +25,11 @@ interface ViewItemsDialogProps {
     items: PurchaseTransactionItemData[] | SalesTransactionItemData[];
     title: string;
     totalAmount: number;
+    partnerLabel?: string;
+    partnerName?: string;
 }
 
-export function ViewItemsDialog({ open, onClose, items, title, totalAmount }: ViewItemsDialogProps) {
+export function ViewItemsDialog({ open, onClose, items, title, totalAmount, partnerLabel, partnerName }: ViewItemsDialogProps) {
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
@@ -35,6 +40,14 @@ export function ViewItemsDialog({ open, onClose, items, title, totalAmount }: Vi
                 </DialogHeader>
 
                 <div className="space-y-4">
+                    {/* Partner Info */}
+                    {partnerLabel && partnerName && (
+                        <div className="bg-muted/30 p-4 rounded-lg border">
+                            <span className="text-sm text-muted-foreground mr-2">{partnerLabel}</span>
+                            <span className="font-semibold">{partnerName}</span>
+                        </div>
+                    )}
+
                     {/* Summary Cards */}
                     <div className="grid grid-cols-3 gap-4">
                         <div className="p-4 rounded-lg bg-muted/50">
@@ -79,10 +92,10 @@ export function ViewItemsDialog({ open, onClose, items, title, totalAmount }: Vi
                                         <TableRow key={item.id}>
                                             <TableCell className="font-medium">{index + 1}</TableCell>
                                             <TableCell className="font-mono text-sm">
-                                                {item.inventory_id || '-'}
+                                                {item.inventory_id || item.item_code_snapshot || '-'}
                                             </TableCell>
                                             <TableCell>
-                                                {item.inventory?.nama_barang || '-'}
+                                                {item.inventory?.nama_barang || item.item_name_snapshot || '-'}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 {formatNumber(item.quantity)}
@@ -100,6 +113,16 @@ export function ViewItemsDialog({ open, onClose, items, title, totalAmount }: Vi
                             </TableBody>
                         </Table>
                     </div>
+
+                    <DialogFooter className="mt-4 flex justify-end">
+                        <Button
+                            variant="outline"
+                            onClick={() => console.log('Print detail transaksi - placeholder')}
+                        >
+                            <Printer className="mr-2 h-4 w-4" />
+                            Cetak
+                        </Button>
+                    </DialogFooter>
                 </div>
             </DialogContent>
         </Dialog>

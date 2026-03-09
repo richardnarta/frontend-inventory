@@ -17,6 +17,8 @@ export interface PurchaseTransactionItemData {
   quantity_unit: QuantityUnit;
   price_per_unit: number;
   subtotal: number;
+  item_code_snapshot?: string | null;
+  item_name_snapshot?: string | null;
   inventory?: InventoryData;
 }
 

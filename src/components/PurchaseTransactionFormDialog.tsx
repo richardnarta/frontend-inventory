@@ -63,7 +63,7 @@ export const CreatePurchaseTransactionFormDialog = ({
         }
     };
 
-    const isFormValid = formData.transaction_date && formData.items.length > 0 &&
+    const isFormValid = formData.transaction_date && formData.supplier_id && formData.items.length > 0 &&
         formData.items.every(item => item.quantity > 0 && item.price_per_unit > 0);
 
     return (
@@ -98,12 +98,12 @@ export const CreatePurchaseTransactionFormDialog = ({
 
                 {/* Supplier */}
                 <div className="space-y-2">
-                    <Label htmlFor="supplier_id">Nama Supplier (opsional)</Label>
+                    <Label htmlFor="supplier_id">Nama Supplier <span className="text-red-500">*</span></Label>
                     <Dropdown
                         items={suppliers}
                         value={formData.supplier_id}
                         onChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))}
-                        placeholder='Pilih supplier (opsional)'
+                        placeholder='Pilih supplier...'
                         searchPlaceholder='Cari supplier...'
                         emptyMessage='Supplier tidak ditemukan'
                         isLoading={isSuppliersLoading}

@@ -9,6 +9,13 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Trash2 } from 'lucide-react';
 import { formatNumber, parseIndonesianNumber } from '../lib/utils';
 import { getInventoryById } from '../service/inventory';
@@ -17,27 +24,39 @@ import { LazyDropdown } from './LazyDropdown';
 import { getInventories } from '../service/inventory';
 import type { DropdownItem } from './Dropdown';
 
+// Price mode per item (only for sales with showPriceModeSelector=true)
+export type PriceMode = 'eceran' | 'grosir' | 'custom';
+
 export interface TransactionItem {
-    tempId: string;  // Temporary ID for React keys
+    tempId: string;
     inventory_id: string;
     quantity: number;
     price_per_unit: number;
+    priceMode?: PriceMode;
     // Runtime data (fetched and calculated):
     inventory?: InventoryData;
     subtotal?: number;
+    // History data for viewing previously saved entries with deleted inventory items
+    item_code_snapshot?: string | null;
+    item_name_snapshot?: string | null;
 }
 
 interface TransactionItemsTableProps {
     items: TransactionItem[];
     onChange: (items: TransactionItem[]) => void;
-    priceType?: 'wholesale' | 'retail'; // 'wholesale' = harga_modal (purchase), 'retail' = harga_jual_eceran (sales)
+    priceType?: 'wholesale' | 'retail';
+    showPriceModeSelector?: boolean; // If true, shows per-row price type dropdown (sales only)
 }
 
-export function TransactionItemsTable({ items, onChange, priceType = 'wholesale' }: TransactionItemsTableProps) {
+export function TransactionItemsTable({
+    items,
+    onChange,
+    priceType = 'wholesale',
+    showPriceModeSelector = false,
+}: TransactionItemsTableProps) {
     const [selectedInventoryId, setSelectedInventoryId] = useState<string>('');
     const [loadingInventoryIds, setLoadingInventoryIds] = useState<Set<string>>(new Set());
 
-    // Fetch inventory details for items that don't have it yet
     useEffect(() => {
         const fetchInventoryDetails = async () => {
             const itemsNeedingData = items.filter(
@@ -46,7 +65,6 @@ export function TransactionItemsTable({ items, onChange, priceType = 'wholesale'
 
             for (const item of itemsNeedingData) {
                 setLoadingInventoryIds(prev => new Set(prev).add(item.inventory_id));
-
                 try {
                     const inventoryData = await getInventoryById(item.inventory_id);
                     if (inventoryData) {
@@ -73,25 +91,30 @@ export function TransactionItemsTable({ items, onChange, priceType = 'wholesale'
         fetchInventoryDetails();
     }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const getPriceForMode = (inventory: InventoryData, mode: PriceMode): number => {
+        switch (mode) {
+            case 'eceran': return inventory.harga_jual_eceran;
+            case 'grosir': return inventory.harga_jual_grosir;
+            case 'custom': return 0; // user sets manually
+        }
+    };
+
     const addItem = async (inventoryId: string) => {
         if (!inventoryId) return;
-
-        // Check if item already exists
         if (items.some(item => item.inventory_id === inventoryId)) {
             alert('Item sudah ada dalam daftar!');
             return;
         }
-
-        // Fetch inventory data
         try {
             const inventoryData = await getInventoryById(inventoryId);
-
-            // Determine initial price based on transaction type
+            const defaultPriceMode: PriceMode = 'eceran';
             let initialPrice = 0;
-            if (priceType === 'wholesale') {
-                initialPrice = inventoryData.harga_modal; // Use cost price for purchases
+            if (showPriceModeSelector) {
+                initialPrice = getPriceForMode(inventoryData, defaultPriceMode);
+            } else if (priceType === 'wholesale') {
+                initialPrice = inventoryData.harga_modal;
             } else if (priceType === 'retail') {
-                initialPrice = inventoryData.harga_jual_eceran; // Use retail price for sales
+                initialPrice = inventoryData.harga_jual_eceran;
             }
 
             const newItem: TransactionItem = {
@@ -99,26 +122,46 @@ export function TransactionItemsTable({ items, onChange, priceType = 'wholesale'
                 inventory_id: inventoryId,
                 quantity: 1,
                 price_per_unit: initialPrice,
+                priceMode: showPriceModeSelector ? defaultPriceMode : undefined,
                 inventory: inventoryData,
                 subtotal: initialPrice
             };
 
             onChange([...items, newItem]);
-            setSelectedInventoryId(''); // Clear selection
+            setSelectedInventoryId('');
         } catch (error) {
             console.error('Failed to add item:', error);
             alert('Gagal menambahkan item');
         }
     };
 
-    const updateItem = (tempId: string, field: keyof TransactionItem, value: any) => {
+    const updateItem = (tempId: string, field: keyof TransactionItem, value: unknown) => {
         onChange(
             items.map(item => {
                 if (item.tempId === tempId) {
                     const updated = { ...item, [field]: value };
-                    // Recalculate subtotal
                     updated.subtotal = updated.quantity * updated.price_per_unit;
                     return updated;
+                }
+                return item;
+            })
+        );
+    };
+
+    const handlePriceModeChange = (tempId: string, mode: PriceMode) => {
+        onChange(
+            items.map(item => {
+                if (item.tempId === tempId) {
+                    const newPrice =
+                        mode !== 'custom' && item.inventory
+                            ? getPriceForMode(item.inventory, mode)
+                            : item.price_per_unit;
+                    return {
+                        ...item,
+                        priceMode: mode,
+                        price_per_unit: mode !== 'custom' ? newPrice : item.price_per_unit,
+                        subtotal: item.quantity * (mode !== 'custom' ? newPrice : item.price_per_unit),
+                    };
                 }
                 return item;
             })
@@ -140,10 +183,7 @@ export function TransactionItemsTable({ items, onChange, priceType = 'wholesale'
         }
     };
 
-    const totalAmount = items.reduce((sum, item) => {
-        return sum + (item.quantity * item.price_per_unit);
-    }, 0);
-
+    const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.price_per_unit), 0);
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
@@ -157,11 +197,7 @@ export function TransactionItemsTable({ items, onChange, priceType = 'wholesale'
                         onChange={setSelectedInventoryId}
                         placeholder="Pilih barang..."
                         onSearch={async (searchTerm: string) => {
-                            const response = await getInventories(
-                                { nama_barang: searchTerm },
-                                1,
-                                50
-                            );
+                            const response = await getInventories({ nama_barang: searchTerm }, 1, 50);
                             return response.items.map((inv): DropdownItem => ({
                                 value: inv.kode_barang,
                                 label: `${inv.kode_barang} - ${inv.nama_barang}`
@@ -189,6 +225,9 @@ export function TransactionItemsTable({ items, onChange, priceType = 'wholesale'
                                     <TableHead>Nama Barang</TableHead>
                                     <TableHead className="w-32">Jumlah</TableHead>
                                     <TableHead className="w-20">Unit</TableHead>
+                                    {showPriceModeSelector && (
+                                        <TableHead className="w-36">Tipe Harga</TableHead>
+                                    )}
                                     <TableHead className="w-40">Harga/Unit</TableHead>
                                     <TableHead className="text-right w-40">Subtotal</TableHead>
                                     <TableHead className="w-16"></TableHead>
@@ -203,6 +242,11 @@ export function TransactionItemsTable({ items, onChange, priceType = 'wholesale'
                                                 <div>
                                                     <div className="font-medium">{item.inventory.nama_barang}</div>
                                                     <div className="text-sm text-muted-foreground">{item.inventory.kode_barang}</div>
+                                                </div>
+                                            ) : item.item_name_snapshot ? (
+                                                <div>
+                                                    <div className="font-medium">{item.item_name_snapshot} <span className="text-xs text-destructive ml-1">(Barang Terhapus)</span></div>
+                                                    <div className="text-sm text-muted-foreground">{item.item_code_snapshot || item.inventory_id}</div>
                                                 </div>
                                             ) : (
                                                 <div className="text-sm text-muted-foreground">Loading...</div>
@@ -219,12 +263,31 @@ export function TransactionItemsTable({ items, onChange, priceType = 'wholesale'
                                         <TableCell>
                                             <span className="text-sm">{item.inventory?.quantity_unit || '-'}</span>
                                         </TableCell>
+                                        {showPriceModeSelector && (
+                                            <TableCell>
+                                                <Select
+                                                    value={item.priceMode ?? 'eceran'}
+                                                    onValueChange={(val) => handlePriceModeChange(item.tempId, val as PriceMode)}
+                                                >
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="eceran">Harga Eceran</SelectItem>
+                                                        <SelectItem value="grosir">Harga Grosir</SelectItem>
+                                                        <SelectItem value="custom">Custom</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                        )}
                                         <TableCell>
                                             <Input
                                                 type="text"
                                                 value={formatNumber(item.price_per_unit)}
                                                 onChange={(e) => handleNumberChange(e, item.tempId, 'price_per_unit')}
                                                 className="text-right"
+                                                readOnly={showPriceModeSelector && item.priceMode !== 'custom'}
+                                                disabled={showPriceModeSelector && item.priceMode !== 'custom'}
                                             />
                                         </TableCell>
                                         <TableCell className="text-right font-medium">

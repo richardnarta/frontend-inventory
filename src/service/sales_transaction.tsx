@@ -67,3 +67,18 @@ export const deleteSalesTransactionById = async (id: number) => {
     throw new Error('Gagal menghapus data transaksi penjualan.');
   }
 };
+
+export const bulkDeleteSalesTransactions = async (ids?: number[], deleteAll = false) => {
+  try {
+    const response = await api.delete('/v1/sales-transaction/bulk/delete', {
+      data: { ids: ids ?? null, delete_all: deleteAll },
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const errorMsg = error.response.data.message || error.response.data.detail || 'Gagal menghapus data transaksi penjualan.';
+      throw new Error(errorMsg);
+    }
+    throw new Error('Gagal menghapus data transaksi penjualan.');
+  }
+};
