@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -6,7 +7,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Loader2 } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -15,6 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { toast } from 'sonner';
 import { formatNumber } from '../lib/utils';
 import type { PurchaseTransactionItemData } from '../model/purchase_transaction';
 import type { SalesTransactionItemData } from '../model/sales_transaction';
@@ -27,9 +29,24 @@ interface ViewItemsDialogProps {
     totalAmount: number;
     partnerLabel?: string;
     partnerName?: string;
+    onPrint?: () => Promise<void> | void;
 }
 
-export function ViewItemsDialog({ open, onClose, items, title, totalAmount, partnerLabel, partnerName }: ViewItemsDialogProps) {
+export function ViewItemsDialog({ open, onClose, items, title, totalAmount, partnerLabel, partnerName, onPrint }: ViewItemsDialogProps) {
+    const [isPrinting, setIsPrinting] = useState(false);
+
+    const handlePrint = async () => {
+        if (!onPrint) return;
+        setIsPrinting(true);
+        try {
+            await onPrint();
+        } catch (err) {
+            console.error('Print failed:', err);
+            toast.error(err instanceof Error ? err.message : 'Gagal mencetak struk.');
+        } finally {
+            setIsPrinting(false);
+        }
+    };
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
@@ -114,15 +131,20 @@ export function ViewItemsDialog({ open, onClose, items, title, totalAmount, part
                         </Table>
                     </div>
 
-                    <DialogFooter className="mt-4 flex justify-end">
-                        <Button
-                            variant="outline"
-                            onClick={() => console.log('Print detail transaksi - placeholder')}
-                        >
-                            <Printer className="mr-2 h-4 w-4" />
-                            Cetak
-                        </Button>
-                    </DialogFooter>
+                    {onPrint && (
+                        <DialogFooter className="mt-4 flex justify-end">
+                            <Button
+                                variant="outline"
+                                onClick={handlePrint}
+                                disabled={isPrinting}
+                            >
+                                {isPrinting
+                                    ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    : <Printer className="mr-2 h-4 w-4" />}
+                                Cetak
+                            </Button>
+                        </DialogFooter>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

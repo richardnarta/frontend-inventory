@@ -2,6 +2,7 @@ import { api } from "@/lib/utils";
 import axios from "axios";
 import type {
   SalesTransactionListResponse,
+  SalesTransactionSingleResponse,
   SalesTransactionCreateRequest,
   SalesTransactionUpdateRequest,
 } from "@/model/sales_transaction";
@@ -28,7 +29,9 @@ export const getSalesTransactions = async (
   return response.data;
 };
 
-export const createSalesTransaction = async (transactionData: SalesTransactionCreateRequest) => {
+export const createSalesTransaction = async (
+  transactionData: SalesTransactionCreateRequest
+): Promise<SalesTransactionSingleResponse> => {
   try {
     const response = await api.post('/v1/sales-transaction', transactionData);
     return response.data;

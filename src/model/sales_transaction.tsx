@@ -1,4 +1,4 @@
-import { type BaseListResponse } from "./common";
+import { type BaseListResponse, type BaseSingleResponse } from "./common";
 import { type BuyerData } from "./buyer";
 import { type InventoryData, type QuantityUnit } from "./inventory";
 
@@ -35,6 +35,10 @@ export interface SalesTransactionData {
 
 export interface SalesTransactionListResponse extends BaseListResponse {
   items: SalesTransactionData[];
+}
+
+export interface SalesTransactionSingleResponse extends BaseSingleResponse {
+  data: SalesTransactionData;
 }
 
 // Create request with multiple items

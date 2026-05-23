@@ -26,7 +26,8 @@ import { ViewItemsDialog } from '@/components/ViewItemsDialog';
 import { getBuyers } from '@/service/buyer';
 import { getInventories } from '@/service/inventory';
 import { createSalesTransaction, deleteSalesTransactionById, bulkDeleteSalesTransactions, getSalesTransactions } from '@/service/sales_transaction';
-import type { SalesTransactionCreateRequest } from '@/model/sales_transaction';
+import type { SalesTransactionCreateRequest, SalesTransactionData } from '@/model/sales_transaction';
+import { printSalesReceipt } from '@/lib/printReceipt';
 import { mapToDropdownItems } from '@/lib/mapper';
 import { cn, formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 import { useRole } from '@/hooks/use-role';
@@ -111,8 +112,9 @@ export const SalesTransactionPage = () => {
         onError: (error: any) => { toast.error(error.message || `Gagal menghapus data.`); },
     });
 
-    const handleSave = async (data: SalesTransactionCreateRequest) => {
-        createMutation.mutate(data);
+    const handleSave = async (data: SalesTransactionCreateRequest): Promise<SalesTransactionData | void> => {
+        const response = await createMutation.mutateAsync(data);
+        return response?.data;
     };
 
     const handleDelete = (id: number) => deleteMutation.mutate(id);
@@ -520,17 +522,21 @@ export const SalesTransactionPage = () => {
             )}
 
             {/* View Items Detail Dialog */}
-            {viewItemsDialog.open && viewItemsDialog.transactionId && (
-                <ViewItemsDialog
-                    open={viewItemsDialog.open}
-                    onClose={() => setViewItemsDialog({ open: false, transactionId: null })}
-                    items={transactions.find(t => t.id === viewItemsDialog.transactionId)?.items || []}
-                    title={`Detail Transaksi Penjualan #${viewItemsDialog.transactionId}`}
-                    totalAmount={transactions.find(t => t.id === viewItemsDialog.transactionId)?.total_amount || 0}
-                    partnerLabel="Pembeli:"
-                    partnerName={transactions.find(t => t.id === viewItemsDialog.transactionId)?.buyer?.name || '-'}
-                />
-            )}
+            {viewItemsDialog.open && viewItemsDialog.transactionId && (() => {
+                const selectedTrx = transactions.find(t => t.id === viewItemsDialog.transactionId);
+                return (
+                    <ViewItemsDialog
+                        open={viewItemsDialog.open}
+                        onClose={() => setViewItemsDialog({ open: false, transactionId: null })}
+                        items={selectedTrx?.items || []}
+                        title={`Detail Transaksi Penjualan #${viewItemsDialog.transactionId}`}
+                        totalAmount={selectedTrx?.total_amount || 0}
+                        partnerLabel="Pembeli:"
+                        partnerName={selectedTrx?.buyer?.name || '-'}
+                        onPrint={selectedTrx ? () => printSalesReceipt(selectedTrx) : undefined}
+                    />
+                );
+            })()}
         </Dialog>
     );
 };
